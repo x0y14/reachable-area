@@ -1,32 +1,5 @@
 import json
-from geometry import *
-from busstop import *
-
-
-def convert_busstop_geojson_to_dataclass(geojson: dict) -> BusStop:
-    # なぜか逆になってる
-    coord = [geojson["geometry"]["coordinates"][1], geojson["geometry"]["coordinates"][0]]
-    geo = Geometry(
-        type=geojson["geometry"]["type"],
-        coordinates=coord
-    )
-    routes = str(geojson["properties"]["P11_003_01"]).split(",")
-    busstop = BusStop(
-        name=geojson["properties"]["P11_001"],
-        group=geojson["properties"]["P11_002"],
-        routes=routes,
-        geometry=geo
-    )
-    return busstop
-
-
-def get_busstops_from_geojson(geojson: dict) -> list[BusStop]:
-    busstops = []
-    for feature in geojson["features"]:
-        busstops.append(
-            convert_busstop_geojson_to_dataclass(feature)
-        )
-    return busstops
+from lib.bus import *
 
 
 def main():

@@ -1,6 +1,6 @@
 import dataclasses
 
-from geometry import Geometry
+from lib.geometry import Geometry
 
 
 @dataclasses.dataclass
