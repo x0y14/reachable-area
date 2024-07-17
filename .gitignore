@@ -1,1 +1,5 @@
 dataset/busstpos/kanagawa/P11-22_14.geojson
+
+
+tutorials/*
+!tutorials/*.py
