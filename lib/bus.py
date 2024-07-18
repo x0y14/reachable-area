@@ -3,11 +3,12 @@ from lib.geometry import Geometry
 
 
 def convert_busstop_geojson_to_dataclass(geojson: dict) -> BusStop:
-    # なぜか逆になってる
-    coord = [geojson["geometry"]["coordinates"][1], geojson["geometry"]["coordinates"][0]]
+    coord_long = geojson["geometry"]["coordinates"][0]
+    coord_lat = geojson["geometry"]["coordinates"][1]
     geo = Geometry(
         type=geojson["geometry"]["type"],
-        coordinates=coord
+        long=coord_long,
+        lat=coord_lat,
     )
     routes = str(geojson["properties"]["P11_003_01"]).split(",")
     busstop = BusStop(

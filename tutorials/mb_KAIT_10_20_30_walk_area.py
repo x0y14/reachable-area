@@ -2,10 +2,11 @@ import os
 import folium
 from dotenv import load_dotenv
 from lib.mapbox import MapBoxApi, IsochroneProfile
+from lib.geometry import Geometry
 
 
 load_dotenv()
-KAIT_COORDINATES_GEO = [139.3399782, 35.4861002]
+KAIT_GEO = Geometry(type="", long=139.3399782, lat=35.4861002)
 
 
 def main():
@@ -14,13 +15,13 @@ def main():
     # 神工大から徒歩10,20,30分のエリアのポリゴンを取得
     result = mapbox.get_isochrone(
         prof=IsochroneProfile.Walking,
-        coord=KAIT_COORDINATES_GEO,
+        geo=KAIT_GEO,
         contours_minutes=[10, 20, 30],
     )
     isochrone_geojson = result
     # 国土地理院タイルを用いて、神工大を中心とした地図を生成
     folium_map = folium.Map(
-        location=[KAIT_COORDINATES_GEO[1], KAIT_COORDINATES_GEO[0]],
+        location=KAIT_GEO.folium_coordinate(),
         zoom_start=13,
         tiles="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png",
         attr="出典: 国土地理院ウェブサイト・地理院タイル・標準地図"

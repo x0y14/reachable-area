@@ -1,5 +1,6 @@
 from enum import Enum
 import requests
+from lib.geometry import Geometry
 
 
 class IsochroneProfile(Enum):
@@ -26,7 +27,7 @@ class MapBoxApi:
 
     def get_isochrone(self,
                       prof: IsochroneProfile,
-                      coord: list[float],
+                      geo: Geometry,
                       contours_minutes: list[int] = None,
                       contours_meters: list[int] = None,
                       contours_colors: list[str] = None,
@@ -37,7 +38,7 @@ class MapBoxApi:
                       depart_at: str = None):
         # パラメータ準備
         p_isochrone_profile = isochrone_to_str(prof)
-        p_center_coordinates = f"{coord[0]},{coord[1]}"
+        p_center_coordinates = f"{geo.long},{geo.lat}"
 
         if contours_minutes is None and contours_meters is None:
             raise Exception("contours_minutes, contours_metersのいずれかを入力してください")
