@@ -37,6 +37,10 @@ Foliumで表示する一部の地図に国土地理院ウェブサイトが提�
 - [【folium】地図のMarkerの色や形・アイコン・タイルを変える](https://chayarokurokuro.hatenablog.com/entry/2020/09/02/212350)
 - [Python+folium+openrouteserviceを使う (経路・時間行列・等時線を例に)](https://zenn.dev/takilog/articles/2be029ccd35972)
 - [Mapbox の Isochrone API を使用してみた。](https://freedom-tech.hatenablog.com/entry/2020/09/27/231438)
+- [How can I use GeoPandas to read a string containing GeoJSON content into a GeoDataFrame?](https://gis.stackexchange.com/questions/420163/how-can-i-use-geopandas-to-read-a-string-containing-geojson-content-into-a-geoda)
+- [geopandasで複数のポリゴンを結合して描画する](https://qiita.com/HidKamiya/items/30c0620ded6013979cad)
+- [Make a union of polygons in GeoPandas, or Shapely (into a single geometry)](https://stackoverflow.com/questions/40385782/make-a-union-of-polygons-in-geopandas-or-shapely-into-a-single-geometry)
+- [The Shapely User Manual](https://shapely.readthedocs.io/en/stable/manual.html#shapely.ops.unary_union)
 
 ## 出典
 - [国土地理院ウェブサイト・地理院タイル・標準地図](https://maps.gsi.go.jp/development/ichiran.html#std)
