@@ -2,9 +2,10 @@
 import json
 import folium
 from lib.bus import *
+from lib.geometry import *
 
 
-KAIT_COORDINATES = [35.4861002,139.3399782]
+KAIT_GEO = Geometry(type="", long=139.3399782, lat=35.4861002)
 DIRECT_KAIT_ROUTE = ["厚67"]
 THROUGH_KAIT_ROUTE = ["厚07", "厚67", "厚89"]
 
@@ -34,16 +35,16 @@ def main():
 
     # [描画]
     # バス停の地図用意
-    folium_map = folium.Map(location=KAIT_COORDINATES, zoom_start=9)
+    folium_map = folium.Map(location=KAIT_GEO.folium_coordinate(), zoom_start=9)
     # バス停をプロット
     for kanagawa_bus_stop in kanagawa_bus_stops:
         if ("神奈川中央" in kanagawa_bus_stop.group and
                 is_include(kanagawa_bus_stop.routes, DIRECT_KAIT_ROUTE+THROUGH_KAIT_ROUTE)):  # かなちゅうバスのみ かつ KAITを通る
             print(kanagawa_bus_stop)
             if kanagawa_bus_stop.name in ["神奈川工科大学", "神奈川工科大学前"]:
-                folium.Marker(location=kanagawa_bus_stop.geometry.coordinates, icon=folium.Icon(color='red')).add_to(folium_map)
+                folium.Marker(location=kanagawa_bus_stop.geometry.folium_coordinate(), icon=folium.Icon(color='red', prefix="fa", icon="school")).add_to(folium_map)
             else:
-                folium.Marker(location=kanagawa_bus_stop.geometry.coordinates).add_to(folium_map)
+                folium.Marker(location=kanagawa_bus_stop.geometry.folium_coordinate(), icon=folium.Icon(color='blue', prefix="fa", icon="bus")).add_to(folium_map)
     # 地図保存
     folium_map.save('kait_routes.html')
     # folium_map
