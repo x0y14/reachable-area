@@ -23,7 +23,7 @@ def main():
         location=[KAIT_COORDINATES_GEO[1], KAIT_COORDINATES_GEO[0]],
         zoom_start=13,
         tiles="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png",
-        attr="国土地理院"
+        attr="出典: 国土地理院ウェブサイト・地理院タイル・標準地図"
     )
     # 徒歩10,20,30分のポリゴンを地図に描画
     for feature in isochrone_geojson["features"]:
