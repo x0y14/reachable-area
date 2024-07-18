@@ -6,3 +6,4 @@ dataset/stations/N02-20_Station.geojson
 
 tutorials/*
 !tutorials/*.py
+!tutorials/*.ipynb
