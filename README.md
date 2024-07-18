@@ -3,6 +3,8 @@
 ## 概要
 TODO
 
+## 環境変数
+- `MAPBOX_API_TOKEN` MAPBOXのAccess tokensを貼り付けてください
 
 ## データ
 **使用している各データは、自ら用意したものでない限りignoreしています。**
