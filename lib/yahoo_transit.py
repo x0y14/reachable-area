@@ -89,3 +89,30 @@ def get_route_yahoo_transit(from_: BusStop, to: BusStop) -> list[dict]:
     })
 
     return _analyze_yahoo_transit_search_result_html(result)
+
+
+def _transfer_less_than_or_equal(routes: list[dict], transfer_count: int) -> list[dict]:
+    result = []
+    for route in routes:
+        if route['transfer'] <= transfer_count:
+            result.append(route)
+    return result
+
+
+def is_able_to_reach_from_either(bs1: BusStop, bs2: BusStop, transfer_limit_lq: int) -> bool:
+    # is able to reach from bs1 to bs2?
+    route_details = get_route_yahoo_transit(from_=bs1, to=bs2)
+    zt_route_details = _transfer_less_than_or_equal(route_details, transfer_limit_lq)
+    if len(zt_route_details) == 0:
+        # bs1からbs2に、乗り換えtransfer_limit_lq回で辿り着けない
+        return False
+
+    # is able to reach from bs2 to bs1?
+    route_details = get_route_yahoo_transit(from_=bs2, to=bs1)
+    zt_route_details = _transfer_less_than_or_equal(route_details, transfer_limit_lq)
+    if len(zt_route_details) == 0:
+        # bs2からbs1に、乗り換えtransfer_limit_lq回で辿り着けない
+        return False
+
+    # you can
+    return True
