@@ -1,7 +1,7 @@
 # 卒研
 
 ## 概要
-TODO
+Repo: https://github.com/x0y14/reachable-area
 
 ## 環境変数
 - `MAPBOX_API_TOKEN` MAPBOXのAccess tokensを貼り付けてください
