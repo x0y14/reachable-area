@@ -10,18 +10,30 @@ def _analyze_yahoo_transit_search_result_html(response: requests.Response) -> li
     soup = BeautifulSoup(response.content, 'html.parser')
     routes = soup.find_all(class_="routeSummary")
     for route in routes:
-        time_required_raw = route.find("li", class_="time").text if route.find("li",
-                                                                               class_="time") is not None else "不明分"
-        fare_raw = route.find(class_="fare").text if route.find(class_="fare") is not None else "不明円"
+        time_required_raw = route.find("li", class_="time").text if route.find("li", class_="time") is not None else ""
+        transfer_raw = route.find(class_="transfer").text if route.find(class_="transfer") is not None else ""
+        fare_raw = route.find(class_="fare").text if route.find(class_="fare") is not None else ""
+        distance_raw = route.find(class_="distance").text if route.find(class_="distance") is not None else ""
 
         time_required_group = re.findall(r"([0-9]+)分", time_required_raw)
         time_required = int(time_required_group[-1])
 
+        transfer_group = re.findall(r"([0-9])回", transfer_raw)
+        transfer = int(transfer_group[-1])
+
         fare_group = re.findall(r"([0-9]+)円", fare_raw)
         fare = int(fare_group[-1])
 
+        distance_group = re.findall(r"([0-9.]+)km", distance_raw)
+        distance = float(distance_group[-1])
+
         result.append(
-            {"time_required": time_required, "fare": fare}
+            {
+                "time_required": time_required,
+                "transfer": transfer,
+                "fare": fare,
+                "distance": distance,
+            }
         )
 
     return result
