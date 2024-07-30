@@ -1,5 +1,7 @@
 from enum import Enum
+
 import requests
+
 from lib.geometry import Geometry
 
 
@@ -25,25 +27,31 @@ class MapBoxApi:
     def __init__(self, access_token):
         self.access_token = access_token
 
-    def get_isochrone(self,
-                      prof: IsochroneProfile,
-                      geo: Geometry,
-                      contours_minutes: list[int] = None,
-                      contours_meters: list[int] = None,
-                      contours_colors: list[str] = None,
-                      polygons: bool = True,
-                      denoise: float = 1.0,
-                      generalize: float = None,
-                      exclude: list[str] = None,
-                      depart_at: str = None):
+    def get_isochrone(
+        self,
+        prof: IsochroneProfile,
+        geo: Geometry,
+        contours_minutes: list[int] = None,
+        contours_meters: list[int] = None,
+        contours_colors: list[str] = None,
+        polygons: bool = True,
+        denoise: float = 1.0,
+        generalize: float = None,
+        exclude: list[str] = None,
+        depart_at: str = None,
+    ):
         # パラメータ準備
         p_isochrone_profile = isochrone_to_str(prof)
         p_center_coordinates = f"{geo.long},{geo.lat}"
 
         if contours_minutes is None and contours_meters is None:
-            raise Exception("contours_minutes, contours_metersのいずれかを入力してください")
+            raise Exception(
+                "contours_minutes, contours_metersのいずれかを入力してください"
+            )
         if contours_minutes is not None and contours_meters is not None:
-            raise Exception("contours_minutes, contours_metersのいずれかを入力してください")
+            raise Exception(
+                "contours_minutes, contours_metersのいずれかを入力してください"
+            )
         _c = None
         if contours_minutes is not None:
             _c = map(lambda i: str(i), contours_minutes)
@@ -83,8 +91,5 @@ class MapBoxApi:
 
         params["access_token"] = self.access_token
 
-        result = requests.get(
-            url=url,
-            params=params
-        )
+        result = requests.get(url=url, params=params)
         return result.json()
