@@ -10,6 +10,11 @@ class BusStop:
     routes: list[str]
     geometry: Geometry
 
+    def __eq__(self, other):
+        return f"{self.group}-{self.name}"
+
+    # def __hash__(self):
+    #     return super().__hash__()
 
 # Sample
 # BusStop(
