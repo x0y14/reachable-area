@@ -37,18 +37,14 @@ class Geometry:
     def __str__(self):
         return f'{{ "type": {self.Type}, "coordinates": [ {", ".join([str(x) for x in self.Coordinates]) } ] }}'
 
-    def calc_mean_geojson(self) -> list[float]:
+    def calc_mean(self) -> Coordinate:
         lngs: list[float] = []
         lats: list[float] = []
         for coord in self.Coordinates:
             lng, lat = coord.to_geojson()
             lngs.append(lng)
             lats.append(lat)
-        return [statistics.fmean(lngs), statistics.fmean(lats)]
-
-    def calc_mean_reverse_geojson(self) -> list[float]:
-        lng, lat = self.calc_mean_geojson()
-        return [lat, lng]
+        return Coordinate(Lng=statistics.fmean(lngs), Lat=statistics.fmean(lats))
 
 
 def load(d: dict) -> Geometry:
