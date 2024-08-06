@@ -14,7 +14,7 @@ def load_stop_data(path: str) -> list[BusStop]:
 
     for feature in j["features"]:
         name = feature["properties"]["P11_001"]
-        group = feature["properties"]["P11_002"]
+        group = str(feature["properties"]["P11_002"]).split("・")
         lng, lat = feature["geometry"]["coordinates"]
         typ = feature["geometry"]["type"]
 

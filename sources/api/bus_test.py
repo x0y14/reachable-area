@@ -9,7 +9,7 @@ class BusApiTestCase(unittest.TestCase):
 
         stop_expected = BusStop(
             name="石楯尾神社前",
-            group="富士急バス（株）",
+            group=["富士急バス（株）"],
             routes=["【上野原】上野原駅〜バイパス〜井戸"],
             geometry=Geometry(
                 Type="Point",
