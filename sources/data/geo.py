@@ -26,6 +26,7 @@ class Coordinate:
 
 
 def calc_distance_m(c1: Coordinate, c2: Coordinate) -> float:
+    """注意: 返却される値は、緯度経度を用いた直線最短距離である。 MAPBOX API等で詳細な距離を出す前のフィルターとして用いることを想定している。"""
     return geodesic(tuple(c1.to_geopy()), tuple(c2.to_geopy())).m
 
 
@@ -35,9 +36,10 @@ class Geometry:
     Coordinates: list[Coordinate]
 
     def __str__(self):
-        return f'{{ "type": {self.Type}, "coordinates": [ {", ".join([str(x) for x in self.Coordinates]) } ] }}'
+        return f'{{ "type": {self.Type}, "coordinates": [ {", ".join([str(x) for x in self.Coordinates])} ] }}'
 
     def calc_mean(self) -> Coordinate:
+        """超適当な座標の平均値算出"""
         lngs: list[float] = []
         lats: list[float] = []
         for coord in self.Coordinates:
