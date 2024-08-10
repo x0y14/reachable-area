@@ -15,7 +15,7 @@ def convert_busstop_geojson_to_dataclass(geojson: dict) -> BusStop:
         name=geojson["properties"]["P11_001"],
         group=geojson["properties"]["P11_002"],
         routes=routes,
-        geometry=geo
+        geometry=geo,
     )
     return busstop
 
@@ -23,7 +23,5 @@ def convert_busstop_geojson_to_dataclass(geojson: dict) -> BusStop:
 def get_busstops_from_geojson(geojson: dict) -> list[BusStop]:
     busstops = []
     for feature in geojson["features"]:
-        busstops.append(
-            convert_busstop_geojson_to_dataclass(feature)
-        )
+        busstops.append(convert_busstop_geojson_to_dataclass(feature))
     return busstops

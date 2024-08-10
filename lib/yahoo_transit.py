@@ -5,15 +5,33 @@ from bs4 import BeautifulSoup
 from lib.busstop import BusStop
 
 
-def _analyze_yahoo_transit_search_result_html(response: requests.Response) -> list[dict]:
+def _analyze_yahoo_transit_search_result_html(
+    response: requests.Response,
+) -> list[dict]:
     result = []
-    soup = BeautifulSoup(response.content, 'html.parser')
+    soup = BeautifulSoup(response.content, "html.parser")
     routes = soup.find_all(class_="routeSummary")
     for route in routes:
-        time_required_raw = route.find("li", class_="time").text if route.find("li", class_="time") is not None else ""
-        transfer_raw = route.find(class_="transfer").text if route.find(class_="transfer") is not None else ""
-        fare_raw = route.find(class_="fare").text if route.find(class_="fare") is not None else ""
-        distance_raw = route.find(class_="distance").text if route.find(class_="distance") is not None else ""
+        time_required_raw = (
+            route.find("li", class_="time").text
+            if route.find("li", class_="time") is not None
+            else ""
+        )
+        transfer_raw = (
+            route.find(class_="transfer").text
+            if route.find(class_="transfer") is not None
+            else ""
+        )
+        fare_raw = (
+            route.find(class_="fare").text
+            if route.find(class_="fare") is not None
+            else ""
+        )
+        distance_raw = (
+            route.find(class_="distance").text
+            if route.find(class_="distance") is not None
+            else ""
+        )
 
         time_required_group = re.findall(r"([0-9]+)分", time_required_raw)
         time_required = int(time_required_group[-1])
@@ -51,7 +69,7 @@ def get_route_yahoo_transit(from_: BusStop, to: BusStop) -> list[dict]:
     to_busstop_name = f"{to.name}/{to.group.replace('（株）', '')}"
 
     # 日時
-    now = datetime.now(timezone(timedelta(hours=+9), 'JST'))
+    now = datetime.now(timezone(timedelta(hours=+9), "JST"))
     y = now.year
     m = now.month
     d = now.day
@@ -78,15 +96,34 @@ def get_route_yahoo_transit(from_: BusStop, to: BusStop) -> list[dict]:
     sr = 0  # sea-road フェリー
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"}
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+    }
 
-    result = requests.get(url=url, headers=headers, params={
-        "from": from_busstop_name, "to": to_busstop_name,
-        "y": y, "m": m, "d": d, "hh": hh, "m1": m1, "m2": m2, "type": type_,
-        "expkind": exp_kind, "userpass": user_pass,
-        "ws": ws, "s": s,
-        "al": al, "shin": shin, "ex": ex, "hb": hb, "lb": lb, "sr": sr
-    })
+    result = requests.get(
+        url=url,
+        headers=headers,
+        params={
+            "from": from_busstop_name,
+            "to": to_busstop_name,
+            "y": y,
+            "m": m,
+            "d": d,
+            "hh": hh,
+            "m1": m1,
+            "m2": m2,
+            "type": type_,
+            "expkind": exp_kind,
+            "userpass": user_pass,
+            "ws": ws,
+            "s": s,
+            "al": al,
+            "shin": shin,
+            "ex": ex,
+            "hb": hb,
+            "lb": lb,
+            "sr": sr,
+        },
+    )
 
     return _analyze_yahoo_transit_search_result_html(result)
 
@@ -94,12 +131,14 @@ def get_route_yahoo_transit(from_: BusStop, to: BusStop) -> list[dict]:
 def _transfer_less_than_or_equal(routes: list[dict], transfer_count: int) -> list[dict]:
     result = []
     for route in routes:
-        if route['transfer'] <= transfer_count:
+        if route["transfer"] <= transfer_count:
             result.append(route)
     return result
 
 
-def is_able_to_reach_from_either(bs1: BusStop, bs2: BusStop, transfer_limit_lq: int) -> bool:
+def is_able_to_reach_from_either(
+    bs1: BusStop, bs2: BusStop, transfer_limit_lq: int
+) -> bool:
     # is able to reach from bs1 to bs2?
     route_details = get_route_yahoo_transit(from_=bs1, to=bs2)
     zt_route_details = _transfer_less_than_or_equal(route_details, transfer_limit_lq)

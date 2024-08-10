@@ -37,10 +37,14 @@ class BusCompany:
             if stop.name == to_stop_name:
                 to_stop = stop
         if from_stop is None or to_stop is None:
-            raise Exception(f"{from_stop_name}または{to_stop_name}のいずれかの駅は登録されていません")
+            raise Exception(
+                f"{from_stop_name}または{to_stop_name}のいずれかの駅は登録されていません"
+            )
 
         routes = self.get_routes_pass_through_bus_stops([from_stop, to_stop])
         if len(routes) == 0:
-            raise Exception(f"{from_stop_name}と{to_stop_name}の両方を通過する路線が存在しません")
+            raise Exception(
+                f"{from_stop_name}と{to_stop_name}の両方を通過する路線が存在しません"
+            )
 
         return get_route_yahoo_transit(from_stop, to_stop)

@@ -16,6 +16,7 @@ class BusStop:
     # def __hash__(self):
     #     return super().__hash__()
 
+
 # Sample
 # BusStop(
 #   name='峰岡上',

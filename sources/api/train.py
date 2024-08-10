@@ -33,4 +33,3 @@ def load_station_data(path: str) -> list[TrainStation]:
         result.append(ts)
 
     return result
-

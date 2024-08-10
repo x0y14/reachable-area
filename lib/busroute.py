@@ -11,11 +11,15 @@ class BusRoute:
 
     def register_stop(self, stop: BusStop):
         if self.id not in stop.routes:
-            raise Exception(f"登録を試みたバス停:{stop.name}は、路線:{self.id}を通りません")
+            raise Exception(
+                f"登録を試みたバス停:{stop.name}は、路線:{self.id}を通りません"
+            )
 
         _s_names = [lambda x: x.name, self.stops]
         if stop.name in _s_names:
-            raise Exception(f"登録を試みたバス停:{stop.name}と同名のバス停が、既に路線:{self.id}に登録されています。")
+            raise Exception(
+                f"登録を試みたバス停:{stop.name}と同名のバス停が、既に路線:{self.id}に登録されています。"
+            )
         self.stops.append(stop)
 
     # def get_ride_infos(self, from_stop_name: str, to_stop_name: str) -> list[dict]:
