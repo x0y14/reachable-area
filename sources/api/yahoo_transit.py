@@ -130,8 +130,8 @@ def get_route_yahoo_transit(
             "sr": sr,
         },
     )
-    print(url)
-    print(result.url)
+    # print(url)
+    # print(result.url)
 
     return _analyze_yahoo_transit_search_result_html(result)
 
@@ -166,7 +166,7 @@ def is_able_to_reach_from_either(
 
 
 def generate_bus_stop_name(stop: BusStop) -> str:
-    return f"{stop.name}/{stop.group.replace('（株）', '')}"
+    return f"{stop.name}/{stop.group[0].replace('（株）', '')}"
 
 
 def generate_train_station_name(station: TrainStation) -> str:
