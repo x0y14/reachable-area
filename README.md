@@ -41,6 +41,7 @@ Foliumで表示する一部の地図に国土地理院ウェブサイトが提�
 - [geopandasで複数のポリゴンを結合して描画する](https://qiita.com/HidKamiya/items/30c0620ded6013979cad)
 - [Make a union of polygons in GeoPandas, or Shapely (into a single geometry)](https://stackoverflow.com/questions/40385782/make-a-union-of-polygons-in-geopandas-or-shapely-into-a-single-geometry)
 - [The Shapely User Manual](https://shapely.readthedocs.io/en/stable/manual.html#shapely.ops.unary_union)
+- https://stackoverflow.com/questions/73689520/how-to-create-a-charfield-with-suggestions-in-django-forms
 
 ## 出典
 - [国土地理院ウェブサイト・地理院タイル・標準地図](https://maps.gsi.go.jp/development/ichiran.html#std)
