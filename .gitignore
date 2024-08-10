@@ -1,9 +1,5 @@
 .env
 
-dataset/busstpos/kanagawa/P11-22_14.geojson
-dataset/stations/N02-20_Station.geojson
+dataset/
 
-
-examples/*
-!tutorials/*.py
-!tutorials/*.ipynb
+*.html
