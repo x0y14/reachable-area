@@ -18,6 +18,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from app.views import *
+
+# fmt: off
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("", country_form)
 ]
+# fmt: on
