@@ -3,3 +3,5 @@
 dataset/
 
 *.html
+
+*.sqlite3
