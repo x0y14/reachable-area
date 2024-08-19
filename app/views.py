@@ -4,7 +4,7 @@ import folium
 from django.views.generic import TemplateView
 from app.forms import FormForm
 from django.shortcuts import render
-
+from django.apps import apps
 
 # def country_form(request):
 #     # instead of hardcoding a list you could make a query of a model, as long as
@@ -33,12 +33,15 @@ class AppView(TemplateView):
     template_name = "index.html"
 
     def get(self, request, *args, **kwargs):
+        bus_stops = apps.get_app_config("app").stations
+        # 出発地点選択肢の追加
         points = []
-        with open("scripts/points.csv", "r") as f:
-            reader = csv.reader(f)
-            points = list(reader)
-        form = FormForm(data_list=points)
+        # with open("scripts/points.csv", "r") as f:
+        #     reader = csv.reader(f)
+        #     points = list(reader)
+        form = FormForm(data_list=bus_stops)
 
+        # 地図の追加
         f = folium.Figure(width="100%", height="50%")
         m = folium.Map(
             location=[35.4861002, 139.3399782],
@@ -47,6 +50,9 @@ class AppView(TemplateView):
             attr=f"出典: 国土地理院ウェブサイト・地理院タイル・標準地図 {MAPBOX_ATTR}",
         )
         f.add_child(m)
+        # もし出発地点が選択されてたら地図にプロット
+        from_ = request.GET.get("from_")
+
         f.render()
 
         return render(
