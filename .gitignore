@@ -5,3 +5,4 @@ dataset/
 *.html
 
 *.sqlite3
+*.csv
