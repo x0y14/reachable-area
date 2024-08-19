@@ -23,6 +23,7 @@ from app.views import *
 # fmt: off
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", country_form)
+    # path("", country_form)
+    path("", AppView.as_view())
 ]
 # fmt: on
