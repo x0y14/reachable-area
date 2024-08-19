@@ -1,5 +1,7 @@
 from django import forms
 
+from engine.transit_type import TransitType
+
 
 class ListTextWidget(forms.TextInput):
     def __init__(self, data_list, name, *args, **kwargs):

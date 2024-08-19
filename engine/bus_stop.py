@@ -1,6 +1,6 @@
 import dataclasses
 
-from geo import *
+from engine.geo import *
 
 
 @dataclasses.dataclass
