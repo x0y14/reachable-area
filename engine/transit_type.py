@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import IntEnum
 
 
-class TransitType(Enum):
+class TransitType(IntEnum):
     TRAIN = 1
     BUS = 2
