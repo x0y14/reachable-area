@@ -3,7 +3,7 @@ import requests
 from datetime import datetime, timedelta, timezone
 from bs4 import BeautifulSoup
 
-from engine.bus_stop import BusStop
+from backend.engine.bus_stop import BusStop
 from train_station import TrainStation
 from transit_type import TransitType
 

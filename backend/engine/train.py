@@ -1,7 +1,7 @@
 import json
 
-from engine import geo
-from engine.train_station import TrainStation
+from backend.engine import geo
+from backend.engine.train_station import TrainStation
 
 
 def load_station_data(path: str) -> list[TrainStation]:

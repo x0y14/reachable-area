@@ -1,6 +1,6 @@
 import json
 
-from engine.bus_stop import *
+from backend.engine.bus_stop import *
 
 
 def load_stop_data(path: str) -> list[BusStop]:
