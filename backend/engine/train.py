@@ -1,7 +1,7 @@
 import json
 
-from backend.engine import geo
-from backend.engine.train_station import TrainStation
+from .geo import *
+from .train_station import TrainStation
 
 
 def load_station_data(path: str) -> list[TrainStation]:
@@ -19,7 +19,7 @@ def load_station_data(path: str) -> list[TrainStation]:
         ts_line = props["N02_003"]
         ts_train_code = int(props["N02_001"])
         ts_management_group_code = int(props["N02_002"])
-        ts_geometry = geo.load(feature["geometry"])
+        ts_geometry = load(feature["geometry"])
 
         ts = TrainStation(
             name=ts_name,

@@ -1,6 +1,6 @@
 import dataclasses
 
-from backend.engine.geo import *
+from .geo import *
 
 
 @dataclasses.dataclass
