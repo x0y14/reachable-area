@@ -1,13 +1,16 @@
 import csv
-from dataclasses import replace
 
 import folium
 import requests
 from django.views.generic import TemplateView
-from home.forms import SearchForm
+from .forms import SearchForm
 from django.shortcuts import render
 
-# from backend.engine.transit_type import *
+# fmt: off
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../backend"))
+from engine.transit_type import *
+# fmt: on
 
 MAPBOX_ATTR = """© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> ©
 <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>
@@ -46,10 +49,10 @@ class HomeView(TemplateView):
         if from_ != "":
             if "🚃" in from_:
                 from_ = str(from_).replace("🚃", "")
-                typ = 1
+                typ = int(TransitType.TRAIN)
             elif "🚌" in from_:
                 from_ = str(from_).replace("🚌", "")
-                typ = 2
+                typ = int(TransitType.BUS)
 
             search_result = requests.get(
                 "http://127.0.0.1:8000/search", params={"from_": from_, "type_": typ}

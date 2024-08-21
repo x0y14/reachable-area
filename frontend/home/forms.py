@@ -1,5 +1,5 @@
 from django import forms
-from home.fields import ListTextWidget
+from .fields import ListTextWidget
 
 
 class SearchForm(forms.Form):
