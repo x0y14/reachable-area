@@ -28,6 +28,9 @@ class Coordinate:
     def to_json(self) -> str:
         return json.dumps({"lng": str(self.Lng), "lat": str(self.Lat)})
 
+    def as_dict(self) -> dict:
+        return {"lng": self.Lng, "lat": self.Lat}
+
 
 def calc_distance_m(c1: Coordinate, c2: Coordinate) -> float:
     """注意: 返却される値は、緯度経度を用いた直線最短距離である。 MAPBOX API等で詳細な距離を出す前のフィルターとして用いることを想定している。"""
@@ -56,6 +59,12 @@ class Geometry:
         return json.dumps(
             {"type": self.Type, "coordinates": [x.to_json() for x in self.Coordinates]}
         )
+
+    def as_dict(self) -> dict:
+        return {
+            "type": self.Type,
+            "coordinates": [x.as_dict() for x in self.Coordinates],
+        }
 
 
 def load(d: dict) -> Geometry:

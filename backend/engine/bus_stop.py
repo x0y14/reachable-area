@@ -27,3 +27,12 @@ class BusStop:
                 "raw_feature": self.raw_feature,
             }
         )
+
+    def as_dict(self) -> dict:
+        return {
+            "name": self.name,
+            "management_groups": self.management_groups,
+            "routes": self.routes,
+            "geometry": self.geometry.as_dict(),
+            "raw_feature": self.raw_feature,
+        }

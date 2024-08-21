@@ -31,3 +31,14 @@ class TrainStation:
                 "raw_feature": self.raw_feature,
             }
         )
+
+    def as_dict(self) -> dict:
+        return {
+            "name": self.name,
+            "management_group": self.management_group,
+            "line": self.line,
+            "train_code": self.train_code,
+            "management_group_code": self.management_group_code,
+            "geometry": self.geometry.as_dict(),
+            "raw_feature": self.raw_feature,
+        }

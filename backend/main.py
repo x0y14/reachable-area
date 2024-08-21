@@ -58,11 +58,11 @@ async def search(type_: int = 0, from_: str = "", to_: str = ""):
             if (stop.management_groups == management_companies) and (
                 stop.name == point_name
             ):
-                return stop
+                return stop.as_dict()
     elif transit_type == TransitType.TRAIN:
         line = _from_split[0]
         for station in dataset["stations"]:  # type: TrainStation
             if (station.line == line) and (station.name == point_name):
-                return station
+                return station.as_dict()
 
     return {"from_": from_, "to_": to_}
