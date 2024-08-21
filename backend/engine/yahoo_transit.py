@@ -166,7 +166,7 @@ def is_able_to_reach_from_either(
 
 
 def generate_bus_stop_name(stop: BusStop) -> str:
-    return f"{stop.name}/{stop.group[0].replace('（株）', '')}"
+    return f"{stop.name}/{stop.management_groups[0].replace('（株）', '')}"
 
 
 def generate_train_station_name(station: TrainStation) -> str:

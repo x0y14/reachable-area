@@ -23,7 +23,9 @@ def main():
             )
         # バス停
         for stop in bus_stops:
-            writer.writerow([int(TransitType.BUS), "・".join(stop.group), stop.name])
+            writer.writerow(
+                [int(TransitType.BUS), "・".join(stop.management_groups), stop.name]
+            )
 
 
 if __name__ == "__main__":

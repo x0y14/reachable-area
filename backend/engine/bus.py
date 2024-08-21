@@ -21,7 +21,13 @@ def load_stop_data(path: str) -> list[BusStop]:
         geo = Geometry(Type=typ, Coordinates=[Coordinate(Lng=lng, Lat=lat)])
         routes = str(feature["properties"]["P11_003_01"]).split(",")
 
-        stop = BusStop(name=name, group=group, routes=routes, geometry=geo)
+        stop = BusStop(
+            name=name,
+            management_groups=group,
+            routes=routes,
+            geometry=geo,
+            raw_feature=feature,
+        )
         stops.append(stop)
 
     return stops

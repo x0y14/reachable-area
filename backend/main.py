@@ -55,7 +55,9 @@ async def search(type_: int = 0, from_: str = "", to_: str = ""):
         management_companies = _from_split[0].split("・")
         for stop in dataset["bus_stops"]:  # type: BusStop
             # print(stop)
-            if (stop.group == management_companies) and (stop.name == point_name):
+            if (stop.management_groups == management_companies) and (
+                stop.name == point_name
+            ):
                 return stop
     elif transit_type == TransitType.TRAIN:
         line = _from_split[0]

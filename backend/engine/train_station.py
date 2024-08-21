@@ -18,3 +18,16 @@ class TrainStation:
 
     def __eq__(self, other):
         return str(self) == str(other)
+
+    def to_json(self) -> str:
+        return json.dumps(
+            {
+                "name": self.name,
+                "management_group": self.management_group,
+                "line": self.line,
+                "train_code": self.train_code,
+                "management_group_code": self.management_group_code,
+                "geometry": self.geometry.to_json(),
+                "raw_feature": self.raw_feature,
+            }
+        )

@@ -52,6 +52,11 @@ class Geometry:
             lats.append(lat)
         return Coordinate(Lng=statistics.fmean(lngs), Lat=statistics.fmean(lats))
 
+    def to_json(self) -> str:
+        return json.dumps(
+            {"type": self.Type, "coordinates": [x.to_json() for x in self.Coordinates]}
+        )
+
 
 def load(d: dict) -> Geometry:
     g_type = d["type"]
