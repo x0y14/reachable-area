@@ -1,4 +1,5 @@
 import dataclasses
+import json
 import statistics
 
 from geopy.distance import geodesic
@@ -23,6 +24,9 @@ class Coordinate:
 
     def to_geopy(self) -> list[float]:
         return self.to_reverse_geojson()
+
+    def to_json(self) -> str:
+        return json.dumps({"lng": str(self.Lng), "lat": str(self.Lat)})
 
 
 def calc_distance_m(c1: Coordinate, c2: Coordinate) -> float:
