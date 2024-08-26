@@ -25,7 +25,7 @@ def load_station_data(path: str) -> list[Station]:
             transit_type=TransitType.TRAIN,
             name=ts_name,
             management_groups=[ts_management_group],
-            line_routes=ts_line,
+            line_routes=[ts_line],
             # train_code=ts_train_code,
             # management_group_code=ts_management_group_code,
             geometry=ts_geometry,
