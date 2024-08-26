@@ -1,10 +1,10 @@
 import json
 
+from . import Station, TransitType
 from .geo import *
-from .train_station import TrainStation
 
 
-def load_station_data(path: str) -> list[TrainStation]:
+def load_station_data(path: str) -> list[Station]:
     data: dict = {}
     with open(path, "r") as f:
         data = json.load(f)
@@ -21,12 +21,13 @@ def load_station_data(path: str) -> list[TrainStation]:
         ts_management_group_code = int(props["N02_002"])
         ts_geometry = load(feature["geometry"])
 
-        ts = TrainStation(
+        ts = Station(
+            transit_type=TransitType.TRAIN,
             name=ts_name,
-            management_group=ts_management_group,
-            line=ts_line,
-            train_code=ts_train_code,
-            management_group_code=ts_management_group_code,
+            management_groups=[ts_management_group],
+            line_routes=ts_line,
+            # train_code=ts_train_code,
+            # management_group_code=ts_management_group_code,
             geometry=ts_geometry,
             raw_feature=feature,
         )

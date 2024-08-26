@@ -1,9 +1,11 @@
 import json
 
-from .bus_stop import *
+from . import TransitType
+from .station import Station
+from .geo import Geometry, Coordinate
 
 
-def load_stop_data(path: str) -> list[BusStop]:
+def load_stop_data(path: str) -> list[Station]:
     stops = []
 
     j = None
@@ -14,17 +16,18 @@ def load_stop_data(path: str) -> list[BusStop]:
 
     for feature in j["features"]:
         name = feature["properties"]["P11_001"]
-        group = str(feature["properties"]["P11_002"]).split("・")
+        groups = str(feature["properties"]["P11_002"]).split("・")
         lng, lat = feature["geometry"]["coordinates"]
         typ = feature["geometry"]["type"]
 
         geo = Geometry(Type=typ, Coordinates=[Coordinate(Lng=lng, Lat=lat)])
         routes = str(feature["properties"]["P11_003_01"]).split(",")
 
-        stop = BusStop(
+        stop = Station(
+            transit_type=TransitType.BUS,
             name=name,
-            management_groups=group,
-            routes=routes,
+            management_groups=groups,
+            line_routes=routes,
             geometry=geo,
             raw_feature=feature,
         )
