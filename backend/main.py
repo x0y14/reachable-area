@@ -1,3 +1,4 @@
+from cProfile import label
 from re import split
 from typing import List, Union
 
@@ -5,11 +6,11 @@ from fastapi import FastAPI, Query
 from contextlib import asynccontextmanager
 
 
-from engine import TransitType
+from engine import TransitType, BusStop, TrainStation
 from engine.bus import *
 from engine.train import *
 
-dataset: dict[str, Union[list[BusStop], list[TrainStation]]] = {}
+dataset: dict[str, list[Station]] = {}
 
 
 @asynccontextmanager
@@ -75,15 +76,29 @@ async def search2(
     _base_point = base_point.split("/")
     transit_type = TransitType(int(_base_point[0]))
     management_group_or_line = _base_point[1]
-    stop_name = _base_point[2]
+    station_name = _base_point[2]
+
+    target_base_stop = None
 
     if transit_type == TransitType.BUS:
         management_companies = management_group_or_line.split("・")
-        target_base_stop = None
-        for stop in dataset["bus_stops"]:  # type: BusStop
+        for stop in dataset["bus_stops"]:
             if (stop.management_groups == management_companies) and (
-                stop.name == stop_name
+                stop.name == station_name
             ):
                 target_base_stop = stop
+    elif transit_type == TransitType.TRAIN:
+        line = [management_group_or_line]
+        for station in dataset["stations"]:
+            if (station.line_routes == line) and (station.name == station_name):
+                target_base_stop = station
 
-    return {"base_point": base_point, "allow_transit_types": allow_transit_types}
+    res = {}  # <- ラムダ式だと不可解な挙動する
+    if target_base_stop is not None:
+        res = target_base_stop.as_dict()
+
+    return {
+        "base_point": base_point,
+        "allow_transit_types": allow_transit_types,
+        "target": res,
+    }
