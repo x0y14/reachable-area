@@ -1,8 +1,6 @@
 import json
 
-from . import TransitType
-from .station import Station
-from .geo import Geometry, Coordinate
+from .station import *
 
 
 def load_stop_data(path: str) -> list[Station]:
