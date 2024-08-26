@@ -1,7 +1,7 @@
 from re import split
-from typing import Union
+from typing import List, Union
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from contextlib import asynccontextmanager
 
 
@@ -65,3 +65,25 @@ async def search(type_: int = 0, from_: str = "", to_: str = ""):
                 return station.as_dict()
 
     return {"from_": from_, "to_": to_}
+
+
+@app.get("/search2")
+async def search2(
+    base_point: str = Query(),
+    allow_transit_types: List[int] = Query(),
+):
+    _base_point = base_point.split("/")
+    transit_type = TransitType(int(_base_point[0]))
+    management_group_or_line = _base_point[1]
+    stop_name = _base_point[2]
+
+    if transit_type == TransitType.BUS:
+        management_companies = management_group_or_line.split("・")
+        target_base_stop = None
+        for stop in dataset["bus_stops"]:  # type: BusStop
+            if (stop.management_groups == management_companies) and (
+                stop.name == stop_name
+            ):
+                target_base_stop = stop
+
+    return {"base_point": base_point, "allow_transit_types": allow_transit_types}
