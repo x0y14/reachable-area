@@ -25,7 +25,6 @@ class HomeView(TemplateView):
     template_name = "index.html"
 
     async def get(self, request, *args, **kwargs):
-
         # 出発地点選択肢の追加
         # points = []
         with open("../dataset/summaries/points.csv", "r") as f:
@@ -42,36 +41,58 @@ class HomeView(TemplateView):
             attr=f"出典: 国土地理院ウェブサイト・地理院タイル・標準地図 {MAPBOX_ATTR}",
         )
         f.add_child(m)
+
         # もし出発地点が選択されてたら地図にプロット
-
-        from_ = request.GET.get("from_")
-        typ = 0
-        if from_ != "":
-            if "🚃" in from_:
-                from_ = str(from_).replace("🚃", "")
-                typ = int(TransitType.TRAIN)
-            elif "🚌" in from_:
-                from_ = str(from_).replace("🚌", "")
-                typ = int(TransitType.BUS)
-
-            search_result = requests.get(
-                "http://127.0.0.1:8000/search", params={"from_": from_, "type_": typ}
+        base_point = request.GET.get("base_point")
+        # allow_transit_types = request.GET.get("allow_transit_types")
+        # walk_within_minutes
+        if (base_point is None) or (base_point == ""):
+            f.render()
+            return render(
+                request,
+                "index.html",
+                {"map": f, "form": form, "base_point": "No data"},
             )
-            if search_result.status_code == 500:
-                return render(
-                    request,
-                    "index.html",
-                    {"map": f, "form": form, "from_": request.GET.get("from_")},
-                )
-            print(search_result.json())
-            if "geometry" in search_result.json():
-                geometry = search_result.json()["geometry"]
+
+        search_result = requests.get(
+            "http://127.0.0.1:8000/search2",
+            params={
+                "base_point": base_point,
+                "allow_transit_types": [0, 1, 2],  # TODO: fix
+                "walk_within_minutes": 10,  # TODO: fix
+            },
+        )
+        if search_result.status_code != 200:
+            return render(
+                request,
+                "index.html",
+                {
+                    "map": f,
+                    "form": form,
+                    "base_point": "No data",
+                },
+            )
+
+        # 検索でbase_pointとした場所を赤ピンで表示
+        if "geometry" in search_result.json()["base_point"]:
+            geometry = search_result.json()["base_point"]["geometry"]
+            folium.Marker(
+                location=[
+                    geometry["coordinates"][0]["lat"],
+                    geometry["coordinates"][0]["lng"],
+                ],
+                icon=folium.Icon(color="red"),
+            ).add_to(m)
+
+        if "stations" in search_result.json():
+            for station in search_result.json()["stations"]:
+                geometry = station["geometry"]
                 folium.Marker(
                     location=[
                         geometry["coordinates"][0]["lat"],
                         geometry["coordinates"][0]["lng"],
                     ],
-                    # icon=folium.Icon(color="red", prefix="fa", icon="school"),
+                    icon=folium.Icon(color="blue"),
                 ).add_to(m)
 
         f.render()
@@ -79,5 +100,5 @@ class HomeView(TemplateView):
         return render(
             request,
             "index.html",
-            {"map": f, "form": form, "from_": request.GET.get("from_")},
+            {"map": f, "form": form, "base_point": request.GET.get("base_point")},
         )

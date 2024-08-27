@@ -138,4 +138,8 @@ async def search2(
         res = target_base_stop.as_dict()
         stations = get_same_line_route_stations(target_base_stop)
 
-    return {"base_point": res, "stations": station_list_as_dict_list(stations)}
+    return {
+        "base_point": res,
+        "allow_transit_types": allow_transit_types,
+        "stations": station_list_as_dict_list(stations),
+    }
