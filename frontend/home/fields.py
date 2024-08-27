@@ -15,12 +15,12 @@ class ListTextWidget(forms.TextInput):
             label = ""
             value = ""
             if int(data[0]) == int(1):
-                label = f"{data[2]}/{data[3]}"
-                value = f"🚃{data[2]}/{data[3]}"
+                label = f"🚃{data[2]}/{data[3]}"
+                value = f"1/{data[2]}/{data[3]}"
                 # value = label
             elif int(data[0]) == int(2):
-                label = f"{data[1]}/{data[2]}"
-                value = f"🚌{data[1]}/{data[2]}"
+                label = f"🚌{data[1]}/{data[2]}"
+                value = f"2/{data[1]}/{data[2]}"
                 # value = label
             data_list += f"<option label='{label}' value='{value}'>"
         data_list += "</datalist>"

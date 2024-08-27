@@ -1,24 +1,26 @@
+from cProfile import label
 from re import split
-from typing import List, Union
+from typing import List, Any
 
+from anyio.from_thread import start_blocking_portal
 from fastapi import FastAPI, Query
 from contextlib import asynccontextmanager
 
 
-from engine import TransitType
+from engine import TransitType, BusStop, TrainStation
 from engine.bus import *
 from engine.train import *
 
-dataset: dict[str, Union[list[BusStop], list[TrainStation]]] = {}
+dataset: dict[TransitType, list[Station]] = {}
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("on start")
-    dataset["bus_stops"] = load_stop_data(
+    dataset[TransitType.BUS] = load_stop_data(
         "../dataset/busstpos/kanagawa/P11-22_14.geojson"
     )
-    dataset["stations"] = load_station_data(
+    dataset[TransitType.TRAIN] = load_station_data(
         "../dataset/stations/N02-20_Station.geojson"
     )
     yield
@@ -40,7 +42,7 @@ def read_item(item_id: int, q: str = None):
 
 @app.get("/bus")
 def read_bus_stops():
-    return dataset["bus_stops"]
+    return dataset[TransitType.BUS]
 
 
 @app.get("/search")
@@ -52,7 +54,7 @@ async def search(type_: int = 0, from_: str = "", to_: str = ""):
 
     if transit_type == TransitType.BUS:
         management_companies = _from_split[0].split("・")
-        for stop in dataset["bus_stops"]:  # type: BusStop
+        for stop in dataset[TransitType.BUS]:  # type: BusStop
             # print(stop)
             if (stop.management_groups == management_companies) and (
                 stop.name == point_name
@@ -60,30 +62,84 @@ async def search(type_: int = 0, from_: str = "", to_: str = ""):
                 return stop.as_dict()
     elif transit_type == TransitType.TRAIN:
         line = _from_split[0]
-        for station in dataset["stations"]:  # type: TrainStation
+        for station in dataset[TransitType.TRAIN]:  # type: TrainStation
             if (station.line == line) and (station.name == point_name):
                 return station.as_dict()
 
     return {"from_": from_, "to_": to_}
 
 
+def _include(a: list[str], b: list[str]) -> bool:
+    for a_content in a:
+        if a_content in b:
+            return True
+    return False
+
+
+def get_same_line_route_stations(station: Station) -> list[Station]:
+    stations: list[Station] = []
+
+    if station.transit_type == TransitType.BUS:
+        for stop in dataset[TransitType.BUS]:
+            if (
+                (stop.management_groups == station.management_groups)
+                and (_include(station.line_routes, stop.line_routes))
+                and (stop.name != station.name)
+            ):
+                stations.append(stop)
+    elif station.transit_type == TransitType.TRAIN:
+        for stat in dataset[TransitType.TRAIN]:
+            if (stat.line_routes == station.line_routes) and (
+                stat.name != station.name
+            ):
+                stations.append(stat)
+
+    return stations
+
+
+def station_list_as_dict_list(stations: list[Station]) -> list[dict[str, Any]]:
+    res: list[dict[str, Any]] = []
+    for st in stations:
+        res.append(st.as_dict())
+    return res
+
+
 @app.get("/search2")
 async def search2(
     base_point: str = Query(),
     allow_transit_types: List[int] = Query(),
+    walk_within_minutes: int = Query(default=10),
 ):
+    # 文字列の分解
     _base_point = base_point.split("/")
-    transit_type = TransitType(int(_base_point[0]))
-    management_group_or_line = _base_point[1]
-    stop_name = _base_point[2]
+    transit_type = TransitType(int(_base_point[0]))  # TransitTypeに準拠
+    management_group_or_line = _base_point[
+        1
+    ]  # 神奈川中央交通（株）だったり中央線みたいなのが入る
+    station_name = _base_point[2]  # 市役所前とか新宿みたいに駅名
 
+    target_base_stop = None
     if transit_type == TransitType.BUS:
         management_companies = management_group_or_line.split("・")
-        target_base_stop = None
-        for stop in dataset["bus_stops"]:  # type: BusStop
+        for stop in dataset[TransitType.BUS]:
             if (stop.management_groups == management_companies) and (
-                stop.name == stop_name
+                stop.name == station_name
             ):
                 target_base_stop = stop
+    elif transit_type == TransitType.TRAIN:
+        line = [management_group_or_line]
+        for station in dataset[TransitType.TRAIN]:
+            if (station.line_routes == line) and (station.name == station_name):
+                target_base_stop = station
 
-    return {"base_point": base_point, "allow_transit_types": allow_transit_types}
+    res = {}  # <- ラムダ式だと不可解な挙動する
+    stations: list[Station] = []
+    if target_base_stop is not None:
+        res = target_base_stop.as_dict()
+        stations = get_same_line_route_stations(target_base_stop)
+
+    return {
+        "base_point": res,
+        "allow_transit_types": allow_transit_types,
+        "stations": station_list_as_dict_list(stations),
+    }
