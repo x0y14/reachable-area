@@ -1,17 +1,22 @@
-from cProfile import label
+import os
 from re import split
 from typing import List, Any
 
-from anyio.from_thread import start_blocking_portal
+import folium
 from fastapi import FastAPI, Query
 from contextlib import asynccontextmanager
-
+from dotenv import load_dotenv
+from requests.packages import target
 
 from engine import TransitType, BusStop, TrainStation
 from engine.bus import *
+from engine.mapbox import MapBoxApi, IsochroneProfile
 from engine.train import *
 
+load_dotenv()
+
 dataset: dict[TransitType, list[Station]] = {}
+mapbox_api: MapBoxApi = None
 
 
 @asynccontextmanager
@@ -23,6 +28,10 @@ async def lifespan(app: FastAPI):
     dataset[TransitType.TRAIN] = load_station_data(
         "../dataset/stations/N02-20_Station.geojson"
     )
+
+    global mapbox_api
+    mapbox_api = MapBoxApi(os.getenv("MAPBOX_API_TOKEN"))
+
     yield
     print("on end")
 
@@ -138,8 +147,17 @@ async def search2(
         res = target_base_stop.as_dict()
         stations = get_same_line_route_stations(target_base_stop)
 
+    walk_areas: list[dict[Any, Any]] = []
+    area = mapbox_api.get_isochrone(
+        prof=IsochroneProfile.Walking,
+        coordinate=target_base_stop.geometry.Coordinates[0],
+        contours_minutes=[walk_within_minutes],
+    )
+    walk_areas.append(area)
+
     return {
         "base_point": res,
         "allow_transit_types": allow_transit_types,
         "stations": station_list_as_dict_list(stations),
+        "areas": walk_areas,
     }

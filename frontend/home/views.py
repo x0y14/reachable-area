@@ -83,7 +83,7 @@ class HomeView(TemplateView):
                 ],
                 icon=folium.Icon(color="red"),
             ).add_to(m)
-
+        # base_pointを経由する駅を青ピンで表示
         if "stations" in search_result.json():
             for station in search_result.json()["stations"]:
                 geometry = station["geometry"]
@@ -94,6 +94,10 @@ class HomeView(TemplateView):
                     ],
                     icon=folium.Icon(color="blue"),
                 ).add_to(m)
+
+        if "areas" in search_result.json():
+            for area in search_result.json()["areas"]:
+                folium.GeoJson(area).add_to(m)
 
         f.render()
 
