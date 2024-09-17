@@ -3,12 +3,14 @@ from re import split
 from typing import List, Any
 
 import folium
+import geopandas
+from shapely.ops import unary_union
+
 from fastapi import FastAPI, Query
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-from requests.packages import target
 
-from engine import TransitType, BusStop, TrainStation
+from engine import TransitType, BusStop, TrainStation, prepare_empty_lists
 from engine.bus import *
 from engine.mapbox import MapBoxApi, IsochroneProfile
 from engine.train import *
@@ -117,7 +119,7 @@ def station_list_as_dict_list(stations: list[Station]) -> list[dict[str, Any]]:
 async def search2(
     base_point: str = Query(),
     allow_transit_types: List[int] = Query(),
-    walk_within_minutes: int = Query(default=10),
+    walk_within_minutes: List[int] = Query(),
 ):
     # 文字列の分解
     _base_point = base_point.split("/")
@@ -147,17 +149,34 @@ async def search2(
         res = target_base_stop.as_dict()
         stations = get_same_line_route_stations(target_base_stop)
 
-    walk_areas: list[dict[Any, Any]] = []
-    area = mapbox_api.get_isochrone(
-        prof=IsochroneProfile.Walking,
-        coordinate=target_base_stop.geometry.Coordinates[0],
-        contours_minutes=[walk_within_minutes],
-    )
-    walk_areas.append(area)
+    # 距離ごとに分けて格納する
+    walk_areas = prepare_empty_lists(len(walk_within_minutes))
+    walk_area_polygons = []
+    for stat in [target_base_stop, *stations]:
+        area_features_collection = mapbox_api.get_isochrone(
+            prof=IsochroneProfile.Walking,
+            coordinate=stat.geometry.Coordinates[0],
+            contours_minutes=walk_within_minutes,
+        )
+        gdf = geopandas.GeoDataFrame.from_features(area_features_collection)
+        # おおきいじゅんで入っているぽい
+        # 小さい順に直すので
+        for i in range(len(walk_within_minutes)):
+            walk_areas[i].append(gdf.geometry[(len(walk_within_minutes) - 1) - i])
+
+    for walk_area in walk_areas:
+        walk_area_polygons.append(geopandas.GeoSeries(unary_union(walk_area)).to_json())
+
+    # area = mapbox_api.get_isochrone(
+    #     prof=IsochroneProfile.Walking,
+    #     coordinate=target_base_stop.geometry.Coordinates[0],
+    #     contours_minutes=walk_within_minutes,
+    # )
+    # walk_areas.append(area)
 
     return {
         "base_point": res,
         "allow_transit_types": allow_transit_types,
         "stations": station_list_as_dict_list(stations),
-        "areas": walk_areas,
+        "areas": walk_area_polygons,
     }

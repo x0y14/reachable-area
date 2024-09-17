@@ -59,7 +59,7 @@ class HomeView(TemplateView):
             params={
                 "base_point": base_point,
                 "allow_transit_types": [0, 1, 2],  # TODO: fix
-                "walk_within_minutes": 10,  # TODO: fix
+                "walk_within_minutes": [10, 20, 30],  # TODO: fix
             },
         )
         if search_result.status_code != 200:
@@ -95,6 +95,8 @@ class HomeView(TemplateView):
                     icon=folium.Icon(color="blue"),
                 ).add_to(m)
 
+        # search_result.json()["areas"] ->
+        # [ 10の結合済みエリアdict, 20の結合済みエリアdict, 30結合済みのエリアdict ]みたいな形で帰ってくる
         if "areas" in search_result.json():
             for area in search_result.json()["areas"]:
                 folium.GeoJson(area).add_to(m)

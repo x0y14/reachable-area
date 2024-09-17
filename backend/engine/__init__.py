@@ -6,3 +6,4 @@ from .train_station import *
 from .transit_type import *
 from .yahoo_transit import *
 from .station import *
+from .utils import *
