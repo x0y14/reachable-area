@@ -44,6 +44,17 @@ class HomeView(TemplateView):
 
         # もし出発地点が選択されてたら地図にプロット
         base_point = request.GET.get("base_point")
+        wa_10 = request.GET.get("walk_area_10_minutes")
+        wa_20 = request.GET.get("walk_area_20_minutes")
+        wa_30 = request.GET.get("walk_area_30_minutes")
+        walk_within_minutes = []
+        if wa_10 is not None:
+            walk_within_minutes.append(10)
+        if wa_20 is not None:
+            walk_within_minutes.append(20)
+        if wa_30 is not None:
+            walk_within_minutes.append(30)
+
         # allow_transit_types = request.GET.get("allow_transit_types")
         # walk_within_minutes
         if (base_point is None) or (base_point == ""):
@@ -59,7 +70,7 @@ class HomeView(TemplateView):
             params={
                 "base_point": base_point,
                 "allow_transit_types": [0, 1, 2],  # TODO: fix
-                "walk_within_minutes": [10, 20, 30],  # TODO: fix
+                "walk_within_minutes": walk_within_minutes,  # TODO: fix
             },
         )
         if search_result.status_code != 200:

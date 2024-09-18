@@ -9,6 +9,9 @@ class SearchForm(forms.Form):
         max_length=255,
         widget=forms.Textarea(attrs={"cols": "400", "rows": "20"}),
     )
+    walk_area_10_minutes = forms.BooleanField(required=False)
+    walk_area_20_minutes = forms.BooleanField(required=False)
+    walk_area_30_minutes = forms.BooleanField(required=False)
 
     def __init__(self, *args, **kwargs):
         point_list = kwargs.pop("data_list", None)
@@ -20,3 +23,6 @@ class SearchForm(forms.Form):
         self.fields["base_point"].widget = ListTextWidget(
             data_list=point_list, name="point_list"
         )
+        self.fields["walk_area_10_minutes"].initial = True
+        self.fields["walk_area_20_minutes"].initial = True
+        self.fields["walk_area_30_minutes"].initial = False
