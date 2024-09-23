@@ -1,6 +1,6 @@
 import dataclasses
-from geo import *
-from transit_type import TransitType
+from .geo import *
+from .transit_type import TransitType
 
 
 @dataclasses.dataclass

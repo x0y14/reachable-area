@@ -1,7 +1,7 @@
 import json
 
-from station import Station, TransitType
-from geo import *
+from .station import Station, TransitType
+from .geo import *
 
 
 def load_station_data(path: str) -> list[Station]:

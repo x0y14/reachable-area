@@ -3,8 +3,8 @@ import requests
 from datetime import datetime, timedelta, timezone
 from bs4 import BeautifulSoup
 
-from station import Station
-from transit_type import TransitType
+from .station import Station
+from .transit_type import TransitType
 
 
 def _analyze_yahoo_transit_search_result_html(
