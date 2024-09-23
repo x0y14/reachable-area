@@ -3,6 +3,7 @@
 dataset/
 
 *.html
+!frontend/**/*.html
 
 *.sqlite3
 *.csv
