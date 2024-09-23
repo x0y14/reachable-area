@@ -1,6 +1,6 @@
 import dataclasses
-from .geo import *
-from .transit_type import TransitType
+from geo import *
+from transit_type import TransitType
 
 
 @dataclasses.dataclass
@@ -21,3 +21,11 @@ class Station:
             "geometry": self.geometry.as_dict(),
             "raw_feature": self.raw_feature,
         }
+
+    def to_yahoo_transit(self) -> str:
+        if self.transit_type == TransitType.BUS:
+            return f"{self.name}/{self.management_groups[0]}".replace("（株）", "")
+        elif self.transit_type == TransitType.TRAIN:
+            return self.name
+
+        return self.name

@@ -3,9 +3,8 @@ import requests
 from datetime import datetime, timedelta, timezone
 from bs4 import BeautifulSoup
 
-from .bus_stop import BusStop
-from .train_station import TrainStation
-from .transit_type import TransitType
+from station import Station
+from transit_type import TransitType
 
 
 def _analyze_yahoo_transit_search_result_html(
@@ -62,8 +61,8 @@ def _analyze_yahoo_transit_search_result_html(
 
 def get_route_yahoo_transit(
     transit_type: TransitType,
-    from_: str,
-    to: str,
+    from_: Station,
+    to: Station,
 ) -> list[dict]:
     # 必須パラメータのみのサンプルurl
     # https://transit.yahoo.co.jp/search/result?from=厚木バスセンター%2F神奈川中央交通&to=神奈川工科大学%2F神奈川中央交通&y=2024&m=07&d=19&hh=10&m1=3&m2=6&type=5&ticket=ic&expkind=1&userpass=1&ws=3&s=0&al=0&shin=0&ex=0&hb=0&lb=1&sr=0
@@ -109,8 +108,8 @@ def get_route_yahoo_transit(
         url=url,
         headers=headers,
         params={
-            "from": from_,
-            "to": to,
+            "from": from_.to_yahoo_transit(),
+            "to": to.to_yahoo_transit(),
             "y": y,
             "m": m,
             "d": d,
@@ -145,17 +144,17 @@ def _transfer_less_than_or_equal(routes: list[dict], transfer_count: int) -> lis
 
 
 def is_able_to_reach_from_either(
-    bs1: BusStop, bs2: BusStop, transfer_limit_lq: int
+    st1: Station, st2: Station, transfer_limit_lq: int
 ) -> bool:
     # is able to reach from bs1 to bs2?
-    route_details = get_route_yahoo_transit(from_=bs1, to=bs2)
+    route_details = get_route_yahoo_transit(from_=st1, to=st2)
     zt_route_details = _transfer_less_than_or_equal(route_details, transfer_limit_lq)
     if len(zt_route_details) == 0:
         # bs1からbs2に、乗り換えtransfer_limit_lq回で辿り着けない
         return False
 
     # is able to reach from bs2 to bs1?
-    route_details = get_route_yahoo_transit(from_=bs2, to=bs1)
+    route_details = get_route_yahoo_transit(from_=st2, to=st1)
     zt_route_details = _transfer_less_than_or_equal(route_details, transfer_limit_lq)
     if len(zt_route_details) == 0:
         # bs2からbs1に、乗り換えtransfer_limit_lq回で辿り着けない
@@ -163,11 +162,3 @@ def is_able_to_reach_from_either(
 
     # you can
     return True
-
-
-def generate_bus_stop_name(stop: BusStop) -> str:
-    return f"{stop.name}/{stop.management_groups[0].replace('（株）', '')}"
-
-
-def generate_train_station_name(station: TrainStation) -> str:
-    return station.name
