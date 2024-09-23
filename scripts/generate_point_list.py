@@ -7,7 +7,7 @@ from backend.engine.transit_type import TransitType
 
 def main():
     train_stations = load_station_data("../dataset/stations/N02-20_Station.geojson")
-    bus_stops = load_stop_data("../dataset/busstpos/kanagawa/P11-22_14.geojson")
+    bus_stops = load_stop_data("../dataset/busstops/kanagawa/P11-22_14.geojson")
 
     with open("../dataset/summaries/points.csv", "w") as f:
         writer = csv.writer(f)
@@ -16,8 +16,8 @@ def main():
             writer.writerow(
                 [
                     int(TransitType.TRAIN),
-                    station.management_group,
-                    station.line,
+                    station.management_groups,
+                    station.line_routes,
                     station.name,
                 ]
             )
