@@ -25,7 +25,7 @@ mapbox_api: MapBoxApi = None
 async def lifespan(app: FastAPI):
     print("on start")
     dataset[TransitType.BUS] = load_stop_data(
-        "../dataset/busstpos/kanagawa/P11-22_14.geojson"
+        "../dataset/busstops/kanagawa/P11-22_14.geojson"
     )
     dataset[TransitType.TRAIN] = load_station_data(
         "../dataset/stations/N02-20_Station.geojson"
@@ -158,6 +158,7 @@ async def search2(
             coordinate=stat.geometry.Coordinates[0],
             contours_minutes=walk_within_minutes,
         )
+        # print(area_features_collection)
         gdf = geopandas.GeoDataFrame.from_features(area_features_collection)
         # おおきいじゅんで入っているぽい
         # 小さい順に直すので
