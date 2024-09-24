@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <title>Reachable Area</title>
+    {{map.header.render|safe}}
+</head>
+
+<body>
+<form action="" method="get" id="container">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="検索">
+</form>
+{{map.html.render|safe}}
+<script>
+    {{map.script.render|safe}}
+</script>
+</body>
+
+<style>
+    #id_base_point {
+        width: 40%;
+    }
+    #container {
+        display: flex;
+    }
+    .folium-map {
+        width: 80%;
+        height: 80%;
+    }
+</style>
+
+</html>
