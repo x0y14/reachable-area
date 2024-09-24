@@ -16,8 +16,8 @@ def main():
             writer.writerow(
                 [
                     int(TransitType.TRAIN),
-                    station.management_groups,
-                    station.line_routes,
+                    "・".join(station.management_groups),
+                    "・".join(station.line_routes),
                     station.name,
                 ]
             )
