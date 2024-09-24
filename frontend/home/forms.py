@@ -24,5 +24,8 @@ class SearchForm(forms.Form):
             data_list=point_list, name="point_list"
         )
         self.fields["walk_area_10_minutes"].initial = True
+        self.fields["walk_area_10_minutes"].widget.attrs.update({
+            "class": "wa"
+        })
         self.fields["walk_area_20_minutes"].initial = True
         self.fields["walk_area_30_minutes"].initial = False
