@@ -4,15 +4,16 @@ from typing import List, Any
 
 import folium
 import geopandas
+from django.utils.dateparse import time_re
 from shapely.ops import unary_union
 
 from fastapi import FastAPI, Query
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
-from engine import TransitType, BusStop, TrainStation, prepare_empty_lists
+from engine import TransitType, BusStop, TrainStation, prepare_empty_lists, get_stations_with_time
 from engine.bus import *
-from engine.mapbox import MapBoxApi, IsochroneProfile
+from engine.mapbox import MapBoxApi, IsochroneProfile, concat_isochrones
 from engine.train import *
 
 load_dotenv()
@@ -180,4 +181,58 @@ async def search2(
         "allow_transit_types": allow_transit_types,
         "stations": station_list_as_dict_list(stations),
         "areas": walk_area_polygons,
+    }
+
+@app.get("/search3")
+async def search3(
+        base_point: str = Query(),
+        allow_transit_types: List[int] = Query(),
+        walk_within_minutes: List[int] = Query(), # 徒歩時間->全体の移動時間に変更する必要あり
+):
+    # 文字列の分解
+    _base_point = base_point.split("/")
+    transit_type = TransitType(int(_base_point[0]))  # TransitTypeに準拠
+    management_group_or_line = _base_point[1]  # 神奈川中央交通（株）だったり中央線みたいなのが入る
+    station_name = _base_point[2]  # 市役所前とか新宿みたいに駅名
+    # ベースの駅を探す
+    target_base_stop = None
+    if transit_type == TransitType.BUS:
+        management_companies = management_group_or_line.split("・")
+        for stop in dataset[TransitType.BUS]:
+            if (stop.management_groups == management_companies) and (
+                    stop.name == station_name
+            ):
+                target_base_stop = stop
+    elif transit_type == TransitType.TRAIN:
+        line = [management_group_or_line]
+        for station in dataset[TransitType.TRAIN]:
+            if (station.line_routes == line) and (station.name == station_name):
+                target_base_stop = station
+
+    reachable_areas = []
+    stations = []
+    for travel_time_min in walk_within_minutes:
+        isochrones = []
+        for time_req, near_station in get_stations_with_time(target_base_stop, dataset, travel_time_min):
+            stations.append(near_station)
+            contour = travel_time_min - time_req
+            if contour < 1:
+                contour = 1
+            if 60 < contour:
+                contour = 60
+            isochrone_feature_collection = mapbox_api.get_isochrone(
+                prof=IsochroneProfile.Walking,
+                coordinate=near_station.geometry.calc_mean(),
+                contours_minutes=[contour]
+            )
+            isochrones.append(isochrone_feature_collection)
+        reachable_areas.append(
+            concat_isochrones(isochrones).to_json()
+        )
+
+    return {
+        "base_point": target_base_stop.as_dict(),
+        "allow_transit_types": allow_transit_types,
+        "stations": station_list_as_dict_list(stations),
+        "areas": reachable_areas,
     }

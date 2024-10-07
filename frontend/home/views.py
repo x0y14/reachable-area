@@ -66,7 +66,7 @@ class HomeView(TemplateView):
             )
 
         search_result = requests.get(
-            "http://127.0.0.1:8000/search2",
+            "http://127.0.0.1:8000/search3",
             params={
                 "base_point": base_point,
                 "allow_transit_types": [0, 1, 2],  # TODO: fix
