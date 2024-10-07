@@ -1,14 +1,17 @@
 import re
 import requests
 from datetime import datetime, timedelta, timezone
+
+from attr.validators import min_len
 from bs4 import BeautifulSoup
 
 from .station import Station
 from .transit_type import TransitType
+from .utils import list_include
 
 
 def _analyze_yahoo_transit_search_result_html(
-    response: requests.Response,
+        response: requests.Response,
 ) -> list[dict]:
     result = []
     soup = BeautifulSoup(response.content, "html.parser")
@@ -60,9 +63,9 @@ def _analyze_yahoo_transit_search_result_html(
 
 
 def get_route_yahoo_transit(
-    transit_type: TransitType,
-    from_: Station,
-    to: Station,
+        transit_type: TransitType,
+        from_: Station,
+        to: Station,
 ) -> list[dict]:
     # 必須パラメータのみのサンプルurl
     # https://transit.yahoo.co.jp/search/result?from=厚木バスセンター%2F神奈川中央交通&to=神奈川工科大学%2F神奈川中央交通&y=2024&m=07&d=19&hh=10&m1=3&m2=6&type=5&ticket=ic&expkind=1&userpass=1&ws=3&s=0&al=0&shin=0&ex=0&hb=0&lb=1&sr=0
@@ -144,7 +147,7 @@ def _transfer_less_than_or_equal(routes: list[dict], transfer_count: int) -> lis
 
 
 def is_able_to_reach_from_either(
-    st1: Station, st2: Station, transfer_limit_lq: int
+        st1: Station, st2: Station, transfer_limit_lq: int
 ) -> bool:
     # is able to reach from bs1 to bs2?
     route_details = get_route_yahoo_transit(from_=st1, to=st2)
@@ -162,3 +165,48 @@ def is_able_to_reach_from_either(
 
     # you can
     return True
+
+
+def get_same_line_or_route_stations(
+        station: Station,
+        ref_station_dict_: dict[TransitType, list[Station]]) -> list[Station]:
+    same_line_stations: list[Station] = []
+
+    if station.transit_type == TransitType.BUS:
+        for stop in ref_station_dict_[TransitType.BUS]:
+            if ((stop.management_groups == station.management_groups)
+                    and (list_include(station.line_routes, stop.line_routes))
+                    and (stop.name != station.name)):
+                same_line_stations.append(stop)
+    elif station.transit_type == TransitType.TRAIN:
+        for stat in ref_station_dict_[TransitType.TRAIN]:
+            if (stat.line_routes == station.line_routes) and (stat.name != station.name):
+                same_line_stations.append(stat)
+    return same_line_stations
+
+def get_stations_with_time(
+        from_:Station,
+        ref_stations:dict[TransitType, list[Station]],
+        limit_min: int) -> list[tuple[int, Station]]:
+    result: list[tuple[int, Station]] = []
+    same_line_stations = get_same_line_or_route_stations(from_, ref_stations)
+    transit_type = from_.transit_type
+
+    for same_line_station in same_line_stations:
+        will_add = False
+        min_time_required = -1
+        routes = get_route_yahoo_transit(transit_type, from_, same_line_station)
+        # routeをすべてチェック
+        for route in routes:
+            if (route["transfer"] == 0) and route["time_required"] <= limit_min:
+                will_add = True
+            # 最低所要時間を更新する
+            if min_time_required == -1:
+                min_time_required = route["time_required"]
+            else:
+                if route["time_required"] < min_time_required:
+                    min_time_required = route["time_required"]
+        if will_add:
+            result.append((min_time_required, same_line_station))
+
+    return result

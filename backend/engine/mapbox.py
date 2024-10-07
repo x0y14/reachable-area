@@ -1,6 +1,9 @@
 from enum import IntEnum
 
 import requests
+from typing import Any
+import geopandas
+from shapely.ops import unary_union
 
 from .geo import *
 
@@ -21,6 +24,29 @@ def isochrone_to_str(iso_prof: IsochroneProfile) -> str:
         return "mapbox/walking"
     elif iso_prof == IsochroneProfile.Cycling:
         return "mapbox/cycling"
+
+
+def concat_isochrones_per_contour(isochrones: list[dict[Any, Any]]) -> dict[int, dict]:
+    result: dict[int, dict[Any, Any]] = {}  # int -> time_contour -> ["features"]["properties"]["contour"]
+    for feature_collection in isochrones:
+        gdf = geopandas.GeoDataFrame.from_features(feature_collection)
+        for feature in gdf.iterfeatures():
+            contour = feature["properties"]["contour"]
+            # init
+            if contour not in result:
+                result[contour] = feature
+            else:
+                result[contour] = geopandas.GeoSeries(unary_union([result[contour], feature])).to_dict()
+
+    return result
+
+def concat_isochrones(isochrones: list[dict[Any, Any]]) -> geopandas.GeoSeries:
+    gdf_geometries = []
+    for feature_collection in isochrones:
+        gdf = geopandas.GeoDataFrame.from_features(feature_collection)
+        for gdf_geometry in gdf.geometry:
+            gdf_geometries.append(gdf_geometry)
+    return geopandas.GeoSeries(unary_union(gdf_geometries))
 
 
 class MapBoxApi:
