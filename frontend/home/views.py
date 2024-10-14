@@ -3,6 +3,8 @@ import csv
 import folium
 import requests
 from django.views.generic import TemplateView
+from folium import LayerControl, FeatureGroup
+
 from .forms import SearchForm
 from django.shortcuts import render
 
@@ -108,10 +110,14 @@ class HomeView(TemplateView):
 
         # search_result.json()["areas"] ->
         # [ 10の結合済みエリアdict, 20の結合済みエリアdict, 30結合済みのエリアdict ]みたいな形で帰ってくる
+        inc=0
         if "areas" in search_result.json():
             for area in search_result.json()["areas"]:
-                folium.GeoJson(area).add_to(m)
+                layer = FeatureGroup(name=f"layer-{inc}")
+                folium.GeoJson(area).add_to(layer)
+                inc+=1
 
+        LayerControl().add_to(m)
         f.render()
 
         return render(
