@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from attr.validators import min_len
 from bs4 import BeautifulSoup
 
+from .database import get_conn, get_routes, GetRoutesReq, InsertRouteReq, insert_route
 from .station import Station
 from .transit_type import TransitType
 from .utils import list_include
@@ -67,6 +68,18 @@ def get_route_yahoo_transit(
         from_: Station,
         to: Station,
 ) -> list[dict]:
+
+    # 既にデータあったらそれ返しちゃう
+    conn = get_conn("engine/cache.db")
+    req = GetRoutesReq(
+        is_bus_route=True if transit_type==TransitType.BUS else False,
+        from_=from_,
+        to_=to
+    )
+    routes = get_routes(conn, req)
+    if len(routes) != 0:
+        return routes
+
     # 必須パラメータのみのサンプルurl
     # https://transit.yahoo.co.jp/search/result?from=厚木バスセンター%2F神奈川中央交通&to=神奈川工科大学%2F神奈川中央交通&y=2024&m=07&d=19&hh=10&m1=3&m2=6&type=5&ticket=ic&expkind=1&userpass=1&ws=3&s=0&al=0&shin=0&ex=0&hb=0&lb=1&sr=0
 
@@ -135,7 +148,20 @@ def get_route_yahoo_transit(
     # print(url)
     # print(result.url)
 
-    return _analyze_yahoo_transit_search_result_html(result)
+    routes = _analyze_yahoo_transit_search_result_html(result)
+    for route in routes:
+        req = InsertRouteReq(
+            is_bus_route=True if transit_type==TransitType.BUS else False,
+            from_=from_,to_=to,
+            time_required=route["time_required"],
+            transfer=route["transfer"],
+            fare=route["fare"],
+            distance=route["distance"]
+        )
+        insert_route(conn, req)
+
+    return routes
+
 
 
 def _transfer_less_than_or_equal(routes: list[dict], transfer_count: int) -> list[dict]:
