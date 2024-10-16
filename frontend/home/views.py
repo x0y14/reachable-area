@@ -113,9 +113,10 @@ class HomeView(TemplateView):
         inc=0
         if "areas" in search_result.json():
             for area in search_result.json()["areas"]:
-                layer = FeatureGroup(name=f"layer-{inc}")
-                folium.GeoJson(area).add_to(layer)
-                inc+=1
+                # layer = FeatureGroup(name=f"layer-{inc}")
+                # folium.GeoJson(area).add_to(layer)
+                # inc+=1
+                folium.GeoJson(area).add_to(m)
 
         LayerControl().add_to(m)
         f.render()
