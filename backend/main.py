@@ -1,6 +1,6 @@
 import os
 from re import split
-from typing import List, Any
+from typing import List, Any, Optional
 
 import folium
 import geopandas
@@ -235,4 +235,75 @@ async def search3(
         "allow_transit_types": allow_transit_types,
         "stations": station_list_as_dict_list(stations),
         "areas": reachable_areas,
+    }
+
+
+def base_station_name_to_station(station_name: str) -> Optional[Station]:
+    _base_point = station_name.split("/")
+    transit_type = TransitType(int(_base_point[0]))  # TransitTypeに準拠
+    management_group_or_line = _base_point[1]  # 神奈川中央交通（株）だったり中央線みたいなのが入る
+    station_name = _base_point[2]  # 市役所前とか新宿みたいに駅名
+    # ベースの駅を探す
+    target_base_stop = None
+    if transit_type == TransitType.BUS:
+        management_companies = management_group_or_line.split("・")
+        for stop in dataset[TransitType.BUS]:
+            if (stop.management_groups == management_companies) and (
+                    stop.name == station_name
+            ):
+                target_base_stop = stop
+    elif transit_type == TransitType.TRAIN:
+        line = [management_group_or_line]
+        for station in dataset[TransitType.TRAIN]:
+            if (station.line_routes == line) and (station.name == station_name):
+                target_base_stop = station
+
+    return target_base_stop
+
+@app.get("/search_v2")
+async def search_v2(
+        base_point: str = Query(),
+        # allow_transit_types: List[int] = Query(),
+        walk_within_minutes: List[int] = Query(),
+    ):
+    # 出発地点探し
+    # base_point TODO: -> base_station_name
+    base_station = base_station_name_to_station(base_point)
+    # なかったら早期にリターン
+    if base_station is None:
+        return {"msg": "station not found"}
+
+    reachable: dict[str, Any] = {}
+    for move_time_min in walk_within_minutes:
+        # 時間内に到達できる駅
+        stations = []
+        # 各駅から移動時間内に到達できる範囲。最後に合体して一つにする
+        isochrones = []
+        for time_req, near_station in get_stations_with_time(base_station, dataset, move_time_min):
+            stations.append(near_station)
+            # contour: mapbox apiで使用するx分以内で到達できる範囲の取得のx
+            # 1<=x<=60(minutes)
+            contour = move_time_min - time_req
+            if contour < 1:  # 下限
+                contour = 1
+            if 60 < contour: # 上限
+                contour = 60
+            feature_collection = mapbox_api.get_isochrone( # 到達可能範囲を取得
+                prof = IsochroneProfile.Walking, # 徒歩で
+                coordinate=near_station.geometry.calc_mean(), # 駅の平均緯度経度を基準に
+                contours_minutes=[contour], # x分以内に到達できる
+            )
+            isochrones.append(feature_collection)
+
+        reachable[str(move_time_min)] = {
+            # 到達可能な駅一覧
+            "stations": stations,
+            # その駅ごと、時間以内に到達可能範囲を結合したもの
+            "isochrone": concat_isochrones(isochrones).to_json(),
+        }
+
+    return {
+        "base_point": base_station,
+        # "allow_transit_types": allow_transit_types,
+        "reachable": reachable
     }
