@@ -5,6 +5,7 @@ import requests
 from django.views.generic import TemplateView
 from folium import LayerControl, FeatureGroup
 
+# from main import search
 from .forms import SearchForm
 from django.shortcuts import render
 
@@ -121,6 +122,117 @@ class HomeView(TemplateView):
         LayerControl().add_to(m)
         f.render()
 
+        return render(
+            request,
+            "index.html",
+            {"map": f, "form": form, "base_point": request.GET.get("base_point")},
+        )
+
+
+class HomeView2(TemplateView):
+    template_name = "index.html"
+
+    async def get(self, request, *args, **kwargs):
+        # 出発地点選択肢の追加
+        # points = []
+        with open("../dataset/summaries/points.csv", "r") as f:
+            reader = csv.reader(f)
+            points = list(reader)
+        form = SearchForm(data_list=points)
+
+        # 地図の追加
+        f = folium.Figure(width="100%", height="50%")
+        m = folium.Map(
+            location=[35.4861002, 139.3399782],
+            zoom_start=14,
+            tiles="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png",
+            attr=f"出典: 国土地理院ウェブサイト・地理院タイル・標準地図 {MAPBOX_ATTR}",
+        )
+        f.add_child(m)
+
+        # 入力解析
+        base_point = request.GET.get("base_point")
+        wa_10 = request.GET.get("walk_area_10_minutes")
+        wa_20 = request.GET.get("walk_area_20_minutes")
+        wa_30 = request.GET.get("walk_area_30_minutes")
+        walk_within_minutes = []
+        if wa_10 is not None:
+            walk_within_minutes.append(10)
+        if wa_20 is not None:
+            walk_within_minutes.append(20)
+        if wa_30 is not None:
+            walk_within_minutes.append(30)
+
+        # 出発地点が未入力であれば早期リターン
+        if (base_point is None) or (base_point == ""):
+            f.render()
+            return render(
+                request,
+                "index.html",
+                {"map": f, "form": form, "base_point": "No data"},
+            )
+
+        # バックエンドから持ってくる
+        search_result = requests.get(
+            "http://127.0.0.1:8000/search_v2",
+            params={
+                "base_point": base_point,
+                # "allow_transit_types": [0, 1, 2],  # TODO: fix
+                "walk_within_minutes": walk_within_minutes,  # TODO: fix
+            },
+        )
+
+        # 取れなかったら早期リターン
+        if search_result.status_code != 200:
+            return render(
+                request,
+                "index.html",
+                {
+                    "map": f,
+                    "form": form,
+                    "base_point": "No data",
+                },
+            )
+
+        # どのレイヤーでも表示する出発地点を赤で
+        if "geometry" in search_result.json()["base_point"]:
+            geometry = search_result.json()["base_point"]["geometry"]
+            folium.Marker(
+                location=[
+                    geometry["Coordinates"][0]["Lat"], # 小文字で通る場合と通らない場合がある..?
+                    geometry["Coordinates"][0]["Lng"],
+                ],
+                icon=folium.Icon(color="red"),
+            ).add_to(m)
+
+        # 移動時間ごとにレイヤー分ける
+        if "reachable" in search_result.json():
+            for move_time_min in search_result.json()["reachable"]: # type: str
+                reachable_data = search_result.json()["reachable"][move_time_min]
+                reachable_stations = reachable_data["stations"]
+                reachable_area = reachable_data["isochrone"]
+                # レイヤーの作成
+                layer = FeatureGroup(name=f"合計 {move_time_min}分以内")
+                # エリアを描画
+                folium.GeoJson(reachable_area).add_to(layer)
+                # 駅を描画
+                for station in reachable_stations:
+                    geometry = station["geometry"]
+                    folium.Marker(
+                        location=[
+                            geometry["Coordinates"][0]["Lat"],
+                            geometry["Coordinates"][0]["Lng"],
+                        ],
+                        icon=folium.Icon(color="blue"),
+                        popup=station["name"],
+                    ).add_to(layer)
+
+                # レイヤーをマップに
+                layer.add_to(m)
+
+        # レイヤーコントローラーの追加
+        folium.LayerControl(collapsed=False).add_to(m)
+        f.render()
         return render(
             request,
             "index.html",
