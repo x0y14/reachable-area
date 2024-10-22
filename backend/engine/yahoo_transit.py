@@ -210,7 +210,7 @@ def get_same_line_or_route_stations(
                 same_line_stations.append(stat)
     return same_line_stations
 
-def get_stations_with_time(
+def get_same_line_or_route_stations_with_time(
         from_:Station,
         ref_stations:dict[TransitType, list[Station]],
         limit_min: int) -> list[tuple[int, Station]]:

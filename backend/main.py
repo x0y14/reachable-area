@@ -11,7 +11,7 @@ from fastapi import FastAPI, Query
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
-from engine import TransitType, BusStop, TrainStation, prepare_empty_lists, get_stations_with_time
+from engine import TransitType, BusStop, TrainStation, prepare_empty_lists, get_same_line_or_route_stations_with_time
 from engine.bus import *
 from engine.mapbox import MapBoxApi, IsochroneProfile, concat_isochrones
 from engine.train import *
@@ -213,7 +213,7 @@ async def search3(
     stations = []
     for travel_time_min in walk_within_minutes:
         isochrones = []
-        for time_req, near_station in get_stations_with_time(target_base_stop, dataset, travel_time_min):
+        for time_req, near_station in get_same_line_or_route_stations_with_time(target_base_stop, dataset, travel_time_min):
             stations.append(near_station)
             contour = travel_time_min - time_req
             if contour < 1:
@@ -279,7 +279,7 @@ async def search_v2(
         stations = []
         # 各駅から移動時間内に到達できる範囲。最後に合体して一つにする
         isochrones = []
-        for time_req, near_station in get_stations_with_time(base_station, dataset, move_time_min):
+        for time_req, near_station in get_same_line_or_route_stations_with_time(base_station, dataset, move_time_min):
             stations.append(near_station)
             # contour: mapbox apiで使用するx分以内で到達できる範囲の取得のx
             # 1<=x<=60(minutes)
