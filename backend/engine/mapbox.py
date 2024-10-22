@@ -3,6 +3,7 @@ from enum import IntEnum
 import requests
 from typing import Any
 import geopandas
+from shapely.geometry import Point
 from shapely.ops import unary_union
 
 from .geo import *
@@ -119,3 +120,37 @@ class MapBoxApi:
 
         result = requests.get(url=url, params=params)
         return result.json()
+
+    # 60分を超えるとMAPBOX APIとISOCHRONEを使用できなくなるため、正確な値ではなく直線距離からの簡易的な計算値になります。
+    def get_walking_travel_time(self, coordinate1: Coordinate, coordinate2: Coordinate) -> int:
+        walking_distance_areas: dict[int, geopandas.GeoDataFrame] = {}
+
+        contours = [x for x in range(1, 61)]
+        contour_quarters = [contours[i:i+4] for i in range(0, len(contours), 4)]
+
+        # ISOCHRONE APIのcontourは同時に4つしか指定できない
+        for contour_quarter in contour_quarters:
+            isochrones = self.get_isochrone(
+                prof=IsochroneProfile.Walking,
+                coordinate=coordinate1,
+                contours_minutes=contour_quarter
+            )
+            # Isochroneの加工
+            for contour in contour_quarter:
+                isochrone: dict = [isochrone for isochrone in isochrones["features"] if isochrone["properties"]["contour"] == contour][0]
+                isochrone_gpd = geopandas.GeoDataFrame.from_features(
+                    {"features": [isochrone], "type": "FeatureCollection"}
+                )
+                walking_distance_areas[contour] = isochrone_gpd
+
+        # 60分以内
+        for travel_time, walking_distance_area in walking_distance_areas.items():
+            point = Point(coordinate2.Lng, coordinate2.Lat)
+            is_contain = bool(walking_distance_area.contains(point)[0])
+            if is_contain:
+                return travel_time
+
+        # 60分以上
+        # 直線距離の計算に入ります. 80m = 1分
+        distance = calc_distance_m(coordinate1, coordinate2)
+        return int(distance / 80)
