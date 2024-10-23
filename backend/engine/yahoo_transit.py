@@ -1,3 +1,4 @@
+import os.path
 import re
 import requests
 from datetime import datetime, timedelta, timezone
@@ -5,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from attr.validators import min_len
 from bs4 import BeautifulSoup
 
+from definitions import PROJECT_ENGINE_DIR
 from .database import get_conn, get_routes, GetRoutesReq, InsertRouteReq, insert_route
 from .station import Station
 from .transit_type import TransitType
@@ -69,15 +71,20 @@ def get_route_yahoo_transit(
         to: Station,
 ) -> list[dict]:
 
+    is_bus = True
+    if transit_type == TransitType.TRAIN:
+        is_bus = False
+
     # 既にデータあったらそれ返しちゃう
-    conn = get_conn("engine/cache.db")
-    req = GetRoutesReq(
-        is_bus_route=True if transit_type==TransitType.BUS else False,
+    conn = get_conn(os.path.join(PROJECT_ENGINE_DIR, "cache.db"))
+    get_req = GetRoutesReq(
+        is_bus_route=is_bus,
         from_=from_,
         to_=to
     )
-    routes = get_routes(conn, req)
+    routes = get_routes(conn, get_req)
     if len(routes) != 0:
+        conn.close()
         return routes
 
     # 必須パラメータのみのサンプルurl
@@ -110,6 +117,7 @@ def get_route_yahoo_transit(
     shin = 0  # shinkansen 新幹線
     ex = 0  # express 特急
     hb = 0  # high-speed-bus? 高速バス
+    lb = 0
     if transit_type == TransitType.TRAIN:
         lb = 0  # load?/bus? 路線/連絡バス
     elif transit_type == TransitType.BUS:
@@ -150,16 +158,23 @@ def get_route_yahoo_transit(
 
     routes = _analyze_yahoo_transit_search_result_html(result)
     for route in routes:
-        req = InsertRouteReq(
-            is_bus_route=True if transit_type==TransitType.BUS else False,
+        insert_req = InsertRouteReq(
+            is_bus_route=is_bus,
             from_=from_,to_=to,
             time_required=route["time_required"],
             transfer=route["transfer"],
             fare=route["fare"],
             distance=route["distance"]
         )
-        insert_route(conn, req)
 
+        try:
+            insert_route(conn, insert_req)
+        except Exception as e:
+            print("!! insert ERROR !!")
+            print(e)
+            print(insert_req)
+
+    conn.close()
     return routes
 
 

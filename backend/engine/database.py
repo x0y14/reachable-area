@@ -34,13 +34,13 @@ def insert_route(conn: sqlite3.Connection, req: InsertRouteReq):
         """insert into 
         routes (is_bus_route, from_, to_, time_required, transfer, fare, distance)
          VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        (1 if req.is_bus_route==True else 0, req.from_.name, req.to_.name, req.time_required, req.transfer, req.fare, req.distance)
+        (1 if req.is_bus_route is True else 0, req.from_.name, req.to_.name, req.time_required, req.transfer, req.fare, req.distance)
     )
     conn.commit()
 
 def get_routes(conn: sqlite3.Connection, req: GetRoutesReq) -> list[dict]:
     cur = conn.cursor()
-    cur.execute("""select * from routes where is_bus_route=? and from_=? and to_=?""", (1 if req.is_bus_route==True else 0, req.from_.name, req.to_.name))
+    cur.execute("""select * from routes where is_bus_route=? and from_=? and to_=?""", (1 if req.is_bus_route is True else 0, req.from_.name, req.to_.name))
 
     routes = []
     for record in cur.fetchall():
