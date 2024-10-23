@@ -1,5 +1,7 @@
+import json
 import sqlite3
 import dataclasses
+from typing import Optional
 
 from engine import Station
 
@@ -61,3 +63,17 @@ def get_routes(conn: sqlite3.Connection, req: GetRoutesReq) -> list[dict]:
             }
         )
     return routes
+
+def insert_isochrones(conn: sqlite3.Connection, request_param: dict, isochrone_from_mapbox: dict) -> None:
+    cur = conn.cursor()
+    cur.execute("""insert into isochrones (web_request, web_response) values (?, ?);""", [json.dumps(request_param), json.dumps(isochrone_from_mapbox)])
+    conn.commit()
+
+def get_isochrones(conn: sqlite3.Connection, request_param: dict) -> Optional[dict]:
+    cur = conn.cursor()
+    cur.execute("""select web_response from isochrones where web_request=?;""", [json.dumps(request_param)])
+    response_json = cur.fetchone()
+
+    if response_json:
+        return json.loads(response_json[0])
+    return None

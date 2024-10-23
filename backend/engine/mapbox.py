@@ -1,3 +1,4 @@
+import os
 from enum import IntEnum
 
 import requests
@@ -6,6 +7,9 @@ import geopandas
 from shapely.geometry import Point
 from shapely.ops import unary_union
 
+from definitions import PROJECT_ENGINE_DIR
+from . import get_conn
+from .database import get_isochrones, insert_isochrones
 from .geo import *
 
 
@@ -116,9 +120,25 @@ class MapBoxApi:
         if p_depart_at is not None:
             params["depart_at"] = p_depart_at
 
+        # CACHEが利用可能か確認
+        conn = get_conn(os.path.join(PROJECT_ENGINE_DIR, "cache.db"))
+        cached_isochrones = get_isochrones(conn, params)
+        if cached_isochrones: # あったので返す
+            conn.close()
+            return cached_isochrones
+
         params["access_token"] = self.access_token
 
         result = requests.get(url=url, params=params)
+        if result.status_code!=200:
+            raise Exception(f"MAPBOX API ERROR: {result}")
+
+        # キャッシュ挿入
+        # アクセストークンは消す
+        del params["access_token"]
+        insert_isochrones(conn, params, result.json())
+        conn.close()
+
         return result.json()
 
     # 60分を超えるとMAPBOX APIとISOCHRONEを使用できなくなるため、正確な値ではなく直線距離からの簡易的な計算値になります。
