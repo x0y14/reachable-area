@@ -131,7 +131,7 @@ class MapBoxApi:
 
         result = requests.get(url=url, params=params)
         if result.status_code!=200:
-            raise Exception(f"MAPBOX API ERROR: {result}")
+            raise Exception(f"MAPBOX API ERROR: {result.json()}")
 
         # キャッシュ挿入
         # アクセストークンは消す

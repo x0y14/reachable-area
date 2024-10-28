@@ -6,6 +6,10 @@ from datetime import datetime, timedelta, timezone
 from attr.validators import min_len
 from bs4 import BeautifulSoup
 
+
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
 from definitions import PROJECT_ENGINE_DIR
 from .database import get_conn, get_routes, GetRoutesReq, InsertRouteReq, insert_route
 from .station import Station
@@ -86,7 +90,7 @@ def get_route_yahoo_transit(
     if len(routes) != 0:
         conn.close()
         return routes
-
+    print(f"cache not found!!: isBus: {get_req.is_bus_route == 1}, {get_req.from_.name}->{get_req.to_.name}")
     # 必須パラメータのみのサンプルurl
     # https://transit.yahoo.co.jp/search/result?from=厚木バスセンター%2F神奈川中央交通&to=神奈川工科大学%2F神奈川中央交通&y=2024&m=07&d=19&hh=10&m1=3&m2=6&type=5&ticket=ic&expkind=1&userpass=1&ws=3&s=0&al=0&shin=0&ex=0&hb=0&lb=1&sr=0
 
@@ -157,6 +161,19 @@ def get_route_yahoo_transit(
     # print(result.url)
 
     routes = _analyze_yahoo_transit_search_result_html(result)
+    if len(routes) == 0:
+        insert_req = InsertRouteReq(
+            is_bus_route=is_bus,
+            from_=from_,to_=to,
+            time_required=-1,
+            transfer=-1,
+            fare=-1,
+            distance=-1
+        )
+        inserted_route = insert_route(conn, insert_req)
+        conn.close()
+        return [inserted_route]
+
     for route in routes:
         insert_req = InsertRouteReq(
             is_bus_route=is_bus,
@@ -168,7 +185,8 @@ def get_route_yahoo_transit(
         )
 
         try:
-            insert_route(conn, insert_req)
+            print("try insert")
+            _ = insert_route(conn, insert_req)
         except Exception as e:
             print("!! insert ERROR !!")
             print(e)
@@ -230,15 +248,22 @@ def get_same_line_or_route_stations_with_time(
         ref_stations:dict[TransitType, list[Station]],
         limit_min: int) -> list[tuple[int, Station]]:
     result: list[tuple[int, Station]] = []
+    # start_time = datetime.now()
     same_line_stations = get_same_line_or_route_stations(from_, ref_stations)
+    # end_time = datetime.now()
+    # print(f"(1) get_same_line_or_route_stations_with_time: {end_time-start_time}s")
     transit_type = from_.transit_type
 
+    # start_time = datetime.now()
     for same_line_station in same_line_stations:
-        will_add = False
+        will_add = False # 同じ路線かつ到達できる駅として一覧に追加すべきですか?
         min_time_required = -1
         routes = get_route_yahoo_transit(transit_type, from_, same_line_station)
         # routeをすべてチェック
         for route in routes:
+            # もし辿り着けない駅だと分かったら
+            if route["time_required"] == -1:
+                break
             if (route["transfer"] == 0) and route["time_required"] <= limit_min:
                 will_add = True
             # 最低所要時間を更新する
@@ -249,5 +274,7 @@ def get_same_line_or_route_stations_with_time(
                     min_time_required = route["time_required"]
         if will_add:
             result.append((min_time_required, same_line_station))
+    # end_time = datetime.now()
+    # print(f"(2) get_same_line_or_route_stations_with_time: {end_time-start_time}s")
 
     return result

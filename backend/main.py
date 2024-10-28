@@ -11,10 +11,12 @@ from fastapi import FastAPI, Query
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
-from engine import TransitType, BusStop, TrainStation, prepare_empty_lists, get_same_line_or_route_stations_with_time
+from engine import TransitType, BusStop, TrainStation, prepare_empty_lists, get_same_line_or_route_stations_with_time, \
+    get_reachable_stations
 from engine.bus import *
 from engine.mapbox import MapBoxApi, IsochroneProfile, concat_isochrones
 from engine.train import *
+
 
 load_dotenv()
 
@@ -305,5 +307,54 @@ async def search_v2(
     return {
         "base_point": base_station,
         # "allow_transit_types": allow_transit_types,
+        "reachable": reachable
+    }
+
+@app.get("/search_v3")
+async def search_v3(
+        base_point: str = Query(),
+        # allow_transit_types: List[int] = Query(),
+        walk_within_minutes: List[int] = Query(),
+    ):
+
+    base_station = base_station_name_to_station(base_point)
+    # なかったら早期にリターン
+    if base_station is None:
+        return {"msg": "station not found"}
+    input_coordinate = base_station.geometry.calc_mean()
+    input_time_limit=30
+
+    nearby_stations = get_reachable_stations(
+        api=mapbox_api,
+        dataset=dataset,
+        start_point=input_coordinate,
+        time_limit=input_time_limit,
+        transit_types=[TransitType.BUS, TransitType.TRAIN]
+    )
+
+    stations = []
+    isochrones = []
+
+    for travel_time, nearby_station in nearby_stations:
+        if not(1<=input_time_limit-travel_time<=60):
+            continue
+        stations.append(nearby_station)
+
+        isochrone = mapbox_api.get_isochrone(
+            prof=IsochroneProfile.Walking,
+            coordinate=nearby_station.geometry.calc_mean(),
+            contours_minutes=[input_time_limit-travel_time]
+        )
+        isochrones.append(isochrone)
+
+    reachable = {str(input_time_limit): {
+        # 到達可能な駅一覧
+        "stations": stations,
+        # その駅ごと、時間以内に到達可能範囲を結合したもの
+        "isochrone": concat_isochrones(isochrones).to_json(),
+    }}
+
+    return {
+        "base_point": base_station,
         "reachable": reachable
     }

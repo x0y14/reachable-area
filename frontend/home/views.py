@@ -174,7 +174,7 @@ class HomeView2(TemplateView):
 
         # バックエンドから持ってくる
         search_result = requests.get(
-            "http://127.0.0.1:8000/search_v2",
+            "http://127.0.0.1:8000/search_v3",
             params={
                 "base_point": base_point,
                 # "allow_transit_types": [0, 1, 2],  # TODO: fix

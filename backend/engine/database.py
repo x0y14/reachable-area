@@ -38,7 +38,9 @@ def insert_route(conn: sqlite3.Connection, req: InsertRouteReq):
          VALUES (?, ?, ?, ?, ?, ?, ?)""",
         (1 if req.is_bus_route is True else 0, req.from_.name, req.to_.name, req.time_required, req.transfer, req.fare, req.distance)
     )
+    print(f"receive insert request: {req.from_.name}->{req.to_.name}")
     conn.commit()
+    return {"time_required": req.time_required, "transfer": req.transfer, "fare": req.fare, "distance": req.distance}
 
 def get_routes(conn: sqlite3.Connection, req: GetRoutesReq) -> list[dict]:
     cur = conn.cursor()
