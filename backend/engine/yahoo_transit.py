@@ -1,9 +1,10 @@
 import os.path
 import re
+
+import bs4
 import requests
 from datetime import datetime, timedelta, timezone
 
-from attr.validators import min_len
 from bs4 import BeautifulSoup
 
 
@@ -15,6 +16,86 @@ from .database import get_conn, get_routes, GetRoutesReq, InsertRouteReq, insert
 from .station import Station
 from .transit_type import TransitType
 from .utils import list_include
+
+def _analyze_yahoo_transit_route_summary(route_data: bs4.element.PageElement) -> dict:
+    time_required_raw = (
+        route_data.find("li", class_="time").text
+        if route_data.find("li", class_="time") is not None
+        else ""
+    )
+    transfer_raw = (
+        route_data.find(class_="transfer").text
+        if route_data.find(class_="transfer") is not None
+        else ""
+    )
+    fare_raw = (
+        route_data.find(class_="fare").text
+        if route_data.find(class_="fare") is not None
+        else ""
+    )
+    distance_raw = (
+        route_data.find(class_="distance").text
+        if route_data.find(class_="distance") is not None
+        else ""
+    )
+    time_required = ""
+    if "乗車" in time_required_raw:
+        time_required_group = re.findall(r"乗車([0-9]+)分", time_required_raw)
+        if len(time_required_group) != 0:
+            time_required = int(time_required_group[-1])
+    if time_required == "":
+        if "時間" in time_required_raw:
+            time_required_group = re.findall(r"([0-9]+)時間([0-9]+)分", time_required_raw)
+            h = time_required_group[-1][0]
+            m = time_required_group[-1][1]
+            time_required = int(h)*60 + int(m)
+        else:
+            time_required_group = re.findall(r"([0-9]+)分", time_required_raw)
+            time_required = int(time_required_group[-1])
+
+    transfer_group = re.findall(r"([0-9])回", transfer_raw)
+    transfer = int(transfer_group[-1])
+
+    fare_group = re.findall(r"([0-9]+)円", fare_raw)
+    fare = int(fare_group[-1])
+
+    distance_group = re.findall(r"([0-9.]+)km", distance_raw)
+    distance = float(distance_group[-1])
+    route_summary = {
+        "time_required": time_required,
+        "transfer": transfer,
+        "fare": fare,
+        "distance_km": distance,
+    }
+    return route_summary
+
+def _analyze_yahoo_transit_route_detail_is_include_walk(route_data: bs4.element.PageElement) -> bool:
+    detail = route_data.find(class_="routeDetail")
+    walks = detail.find_all("div", class_="access walk")
+    if len(walks) == 0:
+        return False
+    return True
+
+def _analyze_yahoo_transit_search_result_html2(
+        response: requests.Response,
+) -> list[dict]:
+    result = []
+    soup = BeautifulSoup(response.content, "html.parser")
+    search_result = soup.find("div", class_="mdSearchResult")
+    if search_result is None:
+        return []
+    routes = search_result.find(id="srline", class_="elmRouteDetail")
+    route_datas = routes.find_all(id=re.compile('^route[0-9]+'))
+    for route_data in route_datas:
+        # print(route_data)
+        route_summary = _analyze_yahoo_transit_route_summary(route_data)
+        # print(route_summary)
+        is_include_walk = _analyze_yahoo_transit_route_detail_is_include_walk(route_data)
+        # print(is_include_walk)
+        if is_include_walk is False:
+            result.append(route_summary)
+
+    return result
 
 
 def _analyze_yahoo_transit_search_result_html(
@@ -44,9 +125,17 @@ def _analyze_yahoo_transit_search_result_html(
             if route.find(class_="distance") is not None
             else ""
         )
-
-        time_required_group = re.findall(r"([0-9]+)分", time_required_raw)
-        time_required = int(time_required_group[-1])
+        if "乗車" in time_required_raw:
+            time_required_group = re.findall(r"乗車([0-9]+)分", time_required_raw)
+            time_required = int(time_required_group[-1])
+        elif "時間" in time_required_raw:
+            time_required_group = re.findall(r"([0-9]+)時間([0-9]+)分", time_required_raw)
+            h = time_required_group[-1][0]
+            m = time_required_group[-1][1]
+            time_required = int(h)*60 + int(m)
+        else:
+            time_required_group = re.findall(r"([0-9]+)分", time_required_raw)
+            time_required = int(time_required_group[-1])
 
         transfer_group = re.findall(r"([0-9])回", transfer_raw)
         transfer = int(transfer_group[-1])
@@ -62,7 +151,7 @@ def _analyze_yahoo_transit_search_result_html(
                 "time_required": time_required,
                 "transfer": transfer,
                 "fare": fare,
-                "distance": distance,
+                "distance_km": distance,
             }
         )
 
@@ -160,7 +249,8 @@ def get_route_yahoo_transit(
     # print(url)
     # print(result.url)
 
-    routes = _analyze_yahoo_transit_search_result_html(result)
+    routes = _analyze_yahoo_transit_search_result_html2(result)
+    # 通れないということなので無効だと明確に示す
     if len(routes) == 0:
         insert_req = InsertRouteReq(
             is_bus_route=is_bus,
@@ -181,7 +271,7 @@ def get_route_yahoo_transit(
             time_required=route["time_required"],
             transfer=route["transfer"],
             fare=route["fare"],
-            distance=route["distance"]
+            distance=route["distance_km"]
         )
 
         try:
@@ -232,15 +322,20 @@ def get_same_line_or_route_stations(
     same_line_stations: list[Station] = []
 
     if station.transit_type == TransitType.BUS:
-        for stop in ref_station_dict_[TransitType.BUS]:
-            if ((stop.management_groups == station.management_groups)
-                    and (list_include(station.line_routes, stop.line_routes))
-                    and (stop.name != station.name)):
-                same_line_stations.append(stop)
+        for candidate in ref_station_dict_[TransitType.BUS]:
+            if ((set(candidate.management_groups) & set(station.management_groups))
+                    and (list_include(station.line_routes, candidate.line_routes))
+                    and (candidate.name != station.name)):
+                same_line_stations.append(candidate)
     elif station.transit_type == TransitType.TRAIN:
-        for stat in ref_station_dict_[TransitType.TRAIN]:
-            if (stat.line_routes == station.line_routes) and (stat.name != station.name):
-                same_line_stations.append(stat)
+        # for stat in ref_station_dict_[TransitType.TRAIN]:
+        #     if (stat.line_routes == station.line_routes) and (stat.name != station.name):
+        #         same_line_stations.append(stat)
+        for candidate in ref_station_dict_[TransitType.TRAIN]:
+            if ((set(candidate.management_groups) & set(station.management_groups))
+                    and (list_include(station.line_routes, candidate.line_routes))
+                    and (candidate.name != station.name)):
+                same_line_stations.append(candidate)
     return same_line_stations
 
 def get_same_line_or_route_stations_with_time(
@@ -257,22 +352,23 @@ def get_same_line_or_route_stations_with_time(
     # start_time = datetime.now()
     for same_line_station in same_line_stations:
         will_add = False # 同じ路線かつ到達できる駅として一覧に追加すべきですか?
-        min_time_required = -1
+        min_time_required = 0
         routes = get_route_yahoo_transit(transit_type, from_, same_line_station)
         # routeをすべてチェック
         for route in routes:
             # もし辿り着けない駅だと分かったら
             if route["time_required"] == -1:
-                break
+                continue
             if (route["transfer"] == 0) and route["time_required"] <= limit_min:
                 will_add = True
             # 最低所要時間を更新する
-            if min_time_required == -1:
+            if min_time_required == 0:
                 min_time_required = route["time_required"]
             else:
                 if route["time_required"] < min_time_required:
                     min_time_required = route["time_required"]
-        if will_add:
+        if will_add and min_time_required >= 0:
+            print(same_line_station.name, min_time_required)
             result.append((min_time_required, same_line_station))
     # end_time = datetime.now()
     # print(f"(2) get_same_line_or_route_stations_with_time: {end_time-start_time}s")

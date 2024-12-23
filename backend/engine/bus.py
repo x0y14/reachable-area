@@ -3,6 +3,15 @@ import json
 from .station import *
 
 
+
+def load_stop_datas(paths: list[str]) -> list[Station]:
+    result = []
+    for path in paths:
+        l = load_stop_data(path)
+        result = [*l, *result]
+    return result
+
+
 def load_stop_data(path: str) -> list[Station]:
     stops = []
 
@@ -27,7 +36,8 @@ def load_stop_data(path: str) -> list[Station]:
             management_groups=groups,
             line_routes=routes,
             geometry=geo,
-            raw_feature=feature,
+            # raw_feature=feature,
+            raw_feature={},
         )
         stops.append(stop)
 

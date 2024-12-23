@@ -3,6 +3,13 @@ import json
 from .station import Station, TransitType
 from .geo import *
 
+def load_station_datas(paths: list[str]) -> list[Station]:
+    result = []
+    for path in paths:
+        l = load_station_data(path)
+        result = [*l, *result]
+    return result
+
 
 def load_station_data(path: str) -> list[Station]:
     data: dict = {}
@@ -29,7 +36,8 @@ def load_station_data(path: str) -> list[Station]:
             # train_code=ts_train_code,
             # management_group_code=ts_management_group_code,
             geometry=ts_geometry,
-            raw_feature=feature,
+            # raw_feature=feature,
+            raw_feature={}
         )
         result.append(ts)
 

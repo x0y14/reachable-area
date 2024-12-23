@@ -27,9 +27,11 @@ def main():
         """
         create table if not exists isochrones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            coordinate_lng real not null,
+            coordinate_lat real not null,
             web_request JSON,
             web_response JSON,
-            unique ( web_request, web_response )
+            unique ( coordinate_lng, coordinate_lat,  web_request, web_response )
         );
         """
     )

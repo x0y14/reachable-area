@@ -3,7 +3,7 @@ import sqlite3
 import dataclasses
 from typing import Optional
 
-from engine import Station
+from engine import Station, Coordinate
 
 
 def get_conn(dbpath: str) -> sqlite3.Connection:
@@ -66,14 +66,14 @@ def get_routes(conn: sqlite3.Connection, req: GetRoutesReq) -> list[dict]:
         )
     return routes
 
-def insert_isochrones(conn: sqlite3.Connection, request_param: dict, isochrone_from_mapbox: dict) -> None:
+def insert_isochrones(conn: sqlite3.Connection, coordinate: Coordinate, request_param: dict, isochrone_from_mapbox: dict) -> None:
     cur = conn.cursor()
-    cur.execute("""insert into isochrones (web_request, web_response) values (?, ?);""", [json.dumps(request_param), json.dumps(isochrone_from_mapbox)])
+    cur.execute("""insert into isochrones (coordinate_lng, coordinate_lat, web_request, web_response) values (?, ?, ?, ?);""", [coordinate.Lng, coordinate.Lat, json.dumps(request_param), json.dumps(isochrone_from_mapbox)])
     conn.commit()
 
-def get_isochrones(conn: sqlite3.Connection, request_param: dict) -> Optional[dict]:
+def get_isochrones(conn: sqlite3.Connection, coordinate: Coordinate, request_param: dict) -> Optional[dict]:
     cur = conn.cursor()
-    cur.execute("""select web_response from isochrones where web_request=?;""", [json.dumps(request_param)])
+    cur.execute("""select web_response from isochrones where isochrones.coordinate_lng=? and isochrones.coordinate_lat=? and web_request=?;""", [coordinate.Lng, coordinate.Lat, json.dumps(request_param)])
     response_json = cur.fetchone()
 
     if response_json:

@@ -122,9 +122,10 @@ class MapBoxApi:
 
         # CACHEが利用可能か確認
         conn = get_conn(os.path.join(PROJECT_ENGINE_DIR, "cache.db"))
-        cached_isochrones = get_isochrones(conn, params)
+        cached_isochrones = get_isochrones(conn, coordinate, params)
         if cached_isochrones: # あったので返す
             conn.close()
+            # print("find cache!")
             return cached_isochrones
 
         params["access_token"] = self.access_token
@@ -136,8 +137,9 @@ class MapBoxApi:
         # キャッシュ挿入
         # アクセストークンは消す
         del params["access_token"]
-        insert_isochrones(conn, params, result.json())
+        insert_isochrones(conn, coordinate, params, result.json())
         conn.close()
+        # print("cached!")
 
         return result.json()
 
